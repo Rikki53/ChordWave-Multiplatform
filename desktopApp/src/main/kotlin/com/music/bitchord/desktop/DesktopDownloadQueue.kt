@@ -19,6 +19,9 @@ sealed interface DesktopDownloadState {
     /** Accepted, waiting for the one in front of it. */
     data object Queued : DesktopDownloadState
 
+    /** A worker has claimed it and is finding a stream to fetch. */
+    data object Resolving : DesktopDownloadState
+
     /** [fraction] is 0f until the length is known, which is the first thing asked for. */
     data class Running(val fraction: Float) : DesktopDownloadState
 
@@ -142,7 +145,7 @@ object DesktopDownloadQueue {
                 val item = takeNext() ?: return
                 val id = item.song.videoId
                 onRunning(id, currentJob())
-                _active.update { it + (id to item.copy(state = DesktopDownloadState.Running(0f))) }
+                _active.update { it + (id to item.copy(state = DesktopDownloadState.Resolving)) }
                 val result = runCatching {
                     DesktopDownloadManager.download(item.song) { downloaded, total ->
                         val fraction = if (total != null && total > 0L) {

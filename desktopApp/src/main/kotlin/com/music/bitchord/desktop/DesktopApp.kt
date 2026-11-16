@@ -674,7 +674,9 @@ fun ChordWaveDesktopApp() {
     var downloads by remember { mutableStateOf(persistence.downloads()) }
     var localSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
     val downloadQueue by DesktopDownloadQueue.active.collectAsState()
-    val downloadInProgress = downloadQueue.keys
+    // Failed rows stay in the queue until cleared, but they are not in progress: a failed track
+    // kept its row spinner forever. Tapping one now retries it instead of cancelling nothing.
+    val downloadInProgress = downloadQueue.filterValues { it.state !is DesktopDownloadState.Failed }.keys
     var playlists by remember { mutableStateOf(persistence.playlists()) }
     var statsRevision by remember { mutableStateOf(0L) }
     var replayPeriod by remember { mutableStateOf(DesktopReplayPeriod.ALL_TIME) }
@@ -4625,10 +4627,11 @@ fun ChordWaveDesktopApp() {
                                 contentPadding = contentPadding,
                                 menu = { song -> songMenu(song) },
                             )
-                            // Only while there is a queue to look at.
-                            if (downloadInProgress.isNotEmpty()) {
+                            // Only while there is a queue to look at — failed rows count here, or
+                            // a queue of nothing but failures would hide its own way in.
+                            if (downloadQueue.isNotEmpty()) {
                                 DesktopActionButton(
-                                    "Queue · ${downloadInProgress.size}",
+                                    "Queue · ${downloadQueue.size}",
                                     ChordWaveIcons.Download,
                                     onClick = { overlays.downloadManager = true },
                                     modifier = Modifier
@@ -7417,7 +7420,7 @@ private fun DesktopSettingsScreen(
 /** The line at the foot of the settings sheet, as Android has it. */
 @Composable
 private fun DesktopSettingsFooter(onLicenses: () -> Unit) {
-    val version = remember { System.getProperty("chordwave.version") ?: "2.2.1" }
+    val version = remember { System.getProperty("chordwave.version") ?: "2.2.2" }
     val linkStyles = TextLinkStyles(
         style = SpanStyle(color = DesktopAccent, textDecoration = TextDecoration.Underline),
     )

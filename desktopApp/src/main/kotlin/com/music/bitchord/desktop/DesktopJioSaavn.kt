@@ -5,6 +5,7 @@ import com.music.bitchord.data.model.SearchResult
 import com.music.bitchord.data.model.Song
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -64,6 +65,9 @@ internal object DesktopJioSaavn {
             "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
     private const val TRACK_PREFIX = "jiosaavn:"
 
+    /** Same ceiling as the addon client: a hung call must not stall the sequential resolve. */
+    private const val TIMEOUT_MS = 20_000L
+
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -72,6 +76,7 @@ internal object DesktopJioSaavn {
 
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) { json(json) }
+        install(HttpTimeout) { requestTimeoutMillis = TIMEOUT_MS }
     }
 
     suspend fun search(query: String, limit: Int = 25): Result<List<SearchResult>> = runCatching {

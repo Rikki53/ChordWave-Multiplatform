@@ -21,13 +21,25 @@ internal object DesktopDownloadHttp {
         .build()
 
     /** A GET for [url] with the download's user agent and the stream's own headers, from [rangeFrom] on. */
-    fun request(url: String, userAgent: String, headers: Map<String, String>, rangeFrom: Long? = null): Request =
+    fun request(
+        url: String,
+        userAgent: String,
+        headers: Map<String, String>,
+        rangeFrom: Long? = null,
+        /** The last byte wanted, when the fetch is a bounded window rather than the rest of the file. */
+        rangeTo: Long? = null,
+    ): Request =
         Request.Builder()
             .url(url)
             .header("User-Agent", userAgent)
             // Raw bytes, so the length and Range offsets are the file's own.
             .header("Accept-Encoding", "identity")
             .apply { headers.forEach { (name, value) -> header(name, value) } }
-            .apply { rangeFrom?.let { header("Range", "bytes=$it-") } }
+            .apply {
+                when {
+                    rangeFrom != null && rangeTo != null -> header("Range", "bytes=$rangeFrom-$rangeTo")
+                    rangeFrom != null -> header("Range", "bytes=$rangeFrom-")
+                }
+            }
             .build()
 }

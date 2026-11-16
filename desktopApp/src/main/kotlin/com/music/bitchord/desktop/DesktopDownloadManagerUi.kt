@@ -118,6 +118,11 @@ private fun DownloadRow(item: DesktopDownloadItem) {
                     style = MaterialTheme.typography.bodySmall,
                     color = DesktopSecondary,
                 )
+                is DesktopDownloadState.Resolving -> Text(
+                    DesktopStrings["resolving", "Resolving…"],
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DesktopSecondary,
+                )
                 is DesktopDownloadState.Running -> Column {
                     Text(
                         if (state.fraction > 0f) {
