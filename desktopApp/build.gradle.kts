@@ -8,7 +8,7 @@ val appVersion: String = providers.gradleProperty("chordwave.version").orNull
     ?.removePrefix("v")
     ?.takeIf { it.isNotBlank() }
     ?: (rootProject.extra["chordwaveVersionName"] as? String)
-    ?: "2.2.2"
+    ?: "2.2.3"
 
 /** Which platform this build is *for*, which is the host unless told otherwise. */
 val hostIsWindows = System.getProperty("os.name").contains("Windows", ignoreCase = true)

@@ -560,6 +560,18 @@ fun ChordWaveDesktopApp() {
     var updateOutcome by remember { mutableStateOf<DesktopUpdater.InstallOutcome?>(null) }
     var updateJob by remember { mutableStateOf<Job?>(null) }
     var updateCheckState by remember { mutableStateOf(DesktopUpdateCheckState.IDLE) }
+    // The remote kill-switch + announcements: the last status this machine fetched, loaded
+    // synchronously so a cached suspension blocks from the very first frame; refreshed from
+    // the network once the engine exists below. Null (never fetched) means "no status" and
+    // the app runs normally — fail-open.
+    var remoteStatus by remember { mutableStateOf(DesktopRemoteStatus.loadCached(persistence)) }
+    val remoteSuspended = remoteStatus?.suspended == true
+    // An announcement already shown and dismissed, by its id; a new id shows again.
+    var dismissedAnnouncementId by remember {
+        mutableStateOf(persistence.string(DesktopRemoteStatus.KEY_DISMISSED_ANNOUNCEMENT))
+    }
+    // "Update required" is dismissed for this session only — it comes back next launch until updated.
+    var minVersionDismissed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         when (val result = DesktopUpdateChecker.check()) {
             is DesktopUpdateChecker.CheckResult.Available -> availableUpdate = result.info
@@ -1659,10 +1671,30 @@ fun ChordWaveDesktopApp() {
             },
         )
     }
+    // The remote status check: on launch, then every 6 hours while running. Only a
+    // successfully fetched `suspended: true` blocks the app — any failure leaves it running
+    // (fail-open) — and a cached suspension is honoured until a fresh fetch lifts it, so the
+    // block is never sticky. A suspension landing mid-session pauses playback and cancels
+    // in-flight downloads; lifting it restores the app without a restart.
+    LaunchedEffect(Unit) {
+        while (true) {
+            val fetched = DesktopRemoteStatus.fetch()
+            if (fetched != null) {
+                remoteStatus = fetched
+                DesktopRemoteStatus.saveCached(persistence, fetched)
+                if (fetched.suspended) {
+                    runCatching { playbackEngine.pause() }
+                    DesktopDownloadQueue.cancelAll()
+                }
+            }
+            delay(DesktopRemoteStatus.CHECK_INTERVAL_MS)
+        }
+    }
     // The update dialog, down here so installing can shut the engine down before quitting.
     // Offer → download with progress → install, all in-app; the browser is only the fallback
     // when the release carries no installer for this platform, or the download fails.
-    availableUpdate?.let { update ->
+    // Suppressed while the app is remotely suspended — the blocking screen owns the window then.
+    availableUpdate?.takeIf { !remoteSuspended }?.let { update ->
         AlertDialog(
             onDismissRequest = {
                 if (updatePhase != DesktopUpdatePhase.DOWNLOADING &&
@@ -1856,6 +1888,57 @@ fun ChordWaveDesktopApp() {
                         dismissUpdate()
                     }) { Text(DesktopStrings["d_open_in_browser", "Open in browser"]) }
                     else -> {}
+                }
+            },
+        )
+    }
+    // A remote announcement, shown once per id until dismissed. The Dismiss button is the
+    // only way out — a stray outside click must not lose a security notice unread.
+    val announcementText = remoteStatus?.announcement?.takeIf { it.isNotBlank() }
+    val announcementId = remoteStatus?.announcementId?.takeIf { it.isNotBlank() }
+        ?: announcementText.orEmpty()
+    if (!remoteSuspended && announcementText != null && announcementId != dismissedAnnouncementId) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(DesktopStrings["d_announcement", "Announcement"]) },
+            text = { Text(announcementText) },
+            confirmButton = {
+                TextButton(onClick = {
+                    persistence.saveString(
+                        DesktopRemoteStatus.KEY_DISMISSED_ANNOUNCEMENT,
+                        announcementId,
+                    )
+                    dismissedAnnouncementId = announcementId
+                }) { Text(DesktopStrings["d_dismiss", "Dismiss"]) }
+            },
+        )
+    }
+    // The server can require a minimum version; this nudges toward the in-app updater
+    // without ever hard-blocking on version alone — only the suspend flag blocks.
+    if (!remoteSuspended && !minVersionDismissed &&
+        DesktopRemoteStatus.isBelowMinVersion(
+            remoteStatus?.minVersion,
+            DesktopUpdateChecker.currentVersion,
+        )
+    ) {
+        AlertDialog(
+            onDismissRequest = { minVersionDismissed = true },
+            title = { Text(DesktopStrings["d_update_required", "Update required"]) },
+            text = {
+                Text(
+                    "ChordWave ${remoteStatus?.minVersion} or newer is required. " +
+                        "You have ${DesktopUpdateChecker.currentVersion}.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    minVersionDismissed = true
+                    runManualUpdateCheck()
+                }) { Text(DesktopStrings["d_check_for_updates", "Check for updates"]) }
+            },
+            dismissButton = {
+                TextButton(onClick = { minVersionDismissed = true }) {
+                    Text(DesktopStrings["d_later", "Later"])
                 }
             },
         )
@@ -2814,14 +2897,22 @@ fun ChordWaveDesktopApp() {
     }
     LaunchedEffect(tray) {
         DesktopTrayMenu.bind(
-            onPlayPause = { if (selectedSong != null) togglePlayPauseFromUser() },
-            onNext = ::playNext,
-            onPrevious = ::playPrevious,
+            // The tray is outside the window, so the blocking screen cannot cover it: its
+            // transport and navigation stay dead while the app is remotely suspended. The
+            // state itself is read here (not the derived flag) so a suspension landing after
+            // this binds is still honoured. Quit is always allowed.
+            onPlayPause = {
+                if (remoteStatus?.suspended != true && selectedSong != null) togglePlayPauseFromUser()
+            },
+            onNext = { if (remoteStatus?.suspended != true) playNext() },
+            onPrevious = { if (remoteStatus?.suspended != true) playPrevious() },
             onOpenPlayer = {
+                if (remoteStatus?.suspended == true) return@bind
                 DesktopWindowVisibility.show()
                 overlays.nowPlaying = true
             },
             onOpenSettings = {
+                if (remoteStatus?.suspended == true) return@bind
                 DesktopWindowVisibility.show()
                 openSettings()
             },
@@ -3389,6 +3480,27 @@ fun ChordWaveDesktopApp() {
             if (duration > 0) target.coerceIn(0L, duration) else target.coerceAtLeast(0L),
         )
         partySyncHolder[0]?.onLocalIntent()
+    }
+
+    // Suspended remotely: the whole app is replaced by the blocking screen until the server
+    // lifts it (next launch, or the next periodic check). Every hook above has already run,
+    // so the status check keeps polling and the app restores itself on its own.
+    if (remoteSuspended) {
+        MaterialTheme(
+            colorScheme = desktopColorScheme(),
+            typography = desktopTypography(),
+        ) {
+            RemoteSuspendedScreen(
+                message = remoteStatus?.suspendMessage?.takeIf { it.isNotBlank() }
+                    ?: DesktopRemoteStatus.DEFAULT_SUSPEND_MESSAGE,
+                onQuit = {
+                    runCatching { playbackEngine.shutdown() }
+                    DesktopWindowsMedia.stop()
+                    exitProcess(0)
+                },
+            )
+        }
+        return
     }
 
     MaterialTheme(
@@ -4656,6 +4768,42 @@ fun ChordWaveDesktopApp() {
         }
     }
 
+}
+
+/**
+ * The remote kill-switch screen: the entire window while the server says the app is
+ * suspended. Nothing behind it is composed, so there is no playback, no download and no
+ * navigation to reach — only Quit. The message comes from the server (or the default
+ * when it sends none); the screen goes away on its own when the flag is lifted.
+ */
+@Composable
+private fun RemoteSuspendedScreen(message: String, onQuit: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(DesktopBackground),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier.padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = DesktopStrings["d_app_suspended", "ChordWave is unavailable"],
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.White.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+            )
+            Button(onClick = onQuit) {
+                Text(DesktopStrings["d_quit", "Quit"])
+            }
+        }
+    }
 }
 
 @Composable
@@ -7420,7 +7568,7 @@ private fun DesktopSettingsScreen(
 /** The line at the foot of the settings sheet, as Android has it. */
 @Composable
 private fun DesktopSettingsFooter(onLicenses: () -> Unit) {
-    val version = remember { System.getProperty("chordwave.version") ?: "2.2.2" }
+    val version = remember { System.getProperty("chordwave.version") ?: "2.2.3" }
     val linkStyles = TextLinkStyles(
         style = SpanStyle(color = DesktopAccent, textDecoration = TextDecoration.Underline),
     )
