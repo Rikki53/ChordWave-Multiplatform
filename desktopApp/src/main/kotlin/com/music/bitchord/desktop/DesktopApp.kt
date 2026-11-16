@@ -167,6 +167,7 @@ import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -179,6 +180,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -324,6 +326,7 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.HazeMaterials
+import java.io.File
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -498,6 +501,24 @@ private enum class DesktopDestination(val id: String, val label: String) {
     SETTINGS("settings", "Settings"),
 }
 
+/** Where the update dialog is in the download-then-install flow. */
+private enum class DesktopUpdatePhase {
+    OFFER,
+    DOWNLOADING,
+    READY,
+    INSTALLING,
+    DONE,
+    FAILED,
+}
+
+/** What the Settings "Check for updates" row last found out. */
+private enum class DesktopUpdateCheckState {
+    IDLE,
+    CHECKING,
+    UP_TO_DATE,
+    FAILED,
+}
+
 internal enum class DesktopRepeatMode {
     OFF,
     ALL,
@@ -529,29 +550,47 @@ fun ChordWaveDesktopApp() {
     var personalPlayingStash by remember { mutableStateOf(false) }
     val persistence = remember { DesktopPersistence() }
     var availableUpdate by remember { mutableStateOf<DesktopUpdateChecker.UpdateInfo?>(null) }
-    LaunchedEffect(Unit) { availableUpdate = DesktopUpdateChecker.check() }
-    availableUpdate?.let { update ->
-        AlertDialog(
-            onDismissRequest = { availableUpdate = null },
-            title = { Text(DesktopStrings["d_update_available", "Update available"]) },
-            text = {
-                Text(
-                    "ChordWave ${update.version} is out — you have ${DesktopUpdateChecker.currentVersion}." +
-                        (update.notes?.takeIf { it.isNotBlank() }?.let { "\n\n${it.take(600)}" } ?: ""),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    DesktopExternalLinks.open(update.downloadUrl ?: update.releaseUrl)
-                    availableUpdate = null
-                }) { Text(DesktopStrings["d_download", "Download"]) }
-            },
-            dismissButton = {
-                TextButton(onClick = { availableUpdate = null }) {
-                    Text(DesktopStrings["d_later", "Later"])
+    // The dialog itself lives below, after the playback engine exists: installing quits the
+    // app, and quitting shuts the engine down first, the way the tray's Quit does.
+    var updatePhase by remember { mutableStateOf(DesktopUpdatePhase.OFFER) }
+    var updateDownloadedBytes by remember { mutableStateOf(0L) }
+    var updateTotalBytes by remember { mutableStateOf<Long?>(null) }
+    var updateDownloadedFile by remember { mutableStateOf<File?>(null) }
+    var updateError by remember { mutableStateOf<String?>(null) }
+    var updateOutcome by remember { mutableStateOf<DesktopUpdater.InstallOutcome?>(null) }
+    var updateJob by remember { mutableStateOf<Job?>(null) }
+    var updateCheckState by remember { mutableStateOf(DesktopUpdateCheckState.IDLE) }
+    LaunchedEffect(Unit) {
+        when (val result = DesktopUpdateChecker.check()) {
+            is DesktopUpdateChecker.CheckResult.Available -> availableUpdate = result.info
+            else -> {}
+        }
+    }
+    val dismissUpdate: () -> Unit = {
+        updateJob?.cancel()
+        updateJob = null
+        availableUpdate = null
+        updatePhase = DesktopUpdatePhase.OFFER
+        updateDownloadedFile = null
+        updateError = null
+        updateOutcome = null
+    }
+    val runManualUpdateCheck: () -> Unit = {
+        if (updateCheckState != DesktopUpdateCheckState.CHECKING) {
+            updateCheckState = DesktopUpdateCheckState.CHECKING
+            scope.launch {
+                when (val result = DesktopUpdateChecker.check()) {
+                    is DesktopUpdateChecker.CheckResult.Available -> {
+                        availableUpdate = result.info
+                        updateCheckState = DesktopUpdateCheckState.IDLE
+                    }
+                    DesktopUpdateChecker.CheckResult.UpToDate ->
+                        updateCheckState = DesktopUpdateCheckState.UP_TO_DATE
+                    DesktopUpdateChecker.CheckResult.Failed ->
+                        updateCheckState = DesktopUpdateCheckState.FAILED
                 }
-            },
-        )
+            }
+        }
     }
     var destination by remember { mutableStateOf(DesktopDestination.LISTEN_NOW) }
     var query by remember { mutableStateOf("") }
@@ -1614,6 +1653,207 @@ fun ChordWaveDesktopApp() {
                     persistence.saveHistory(history)
                     DesktopScrobbling.updateNowPlaying(song)
                     partySyncHolder[0]?.onLocalIntent()
+                }
+            },
+        )
+    }
+    // The update dialog, down here so installing can shut the engine down before quitting.
+    // Offer → download with progress → install, all in-app; the browser is only the fallback
+    // when the release carries no installer for this platform, or the download fails.
+    availableUpdate?.let { update ->
+        AlertDialog(
+            onDismissRequest = {
+                if (updatePhase != DesktopUpdatePhase.DOWNLOADING &&
+                    updatePhase != DesktopUpdatePhase.INSTALLING
+                ) {
+                    dismissUpdate()
+                }
+            },
+            title = {
+                Text(
+                    when (updatePhase) {
+                        DesktopUpdatePhase.FAILED ->
+                            DesktopStrings["d_update_failed", "Update failed"]
+                        DesktopUpdatePhase.DOWNLOADING ->
+                            DesktopStrings["d_downloading_update", "Downloading update…"]
+                        DesktopUpdatePhase.READY ->
+                            DesktopStrings["d_update_downloaded", "Update downloaded"]
+                        DesktopUpdatePhase.INSTALLING ->
+                            DesktopStrings["d_installing", "Installing…"]
+                        else -> DesktopStrings["d_update_available", "Update available"]
+                    },
+                )
+            },
+            text = {
+                when (updatePhase) {
+                    DesktopUpdatePhase.OFFER -> Text(
+                        "ChordWave ${update.version} is out — you have " +
+                            "${DesktopUpdateChecker.currentVersion}." +
+                            (update.notes?.takeIf { it.isNotBlank() }
+                                ?.let { "\n\n${it.take(600)}" } ?: ""),
+                    )
+                    DesktopUpdatePhase.DOWNLOADING -> Column {
+                        val total = updateTotalBytes
+                        if (total != null && total > 0) {
+                            val fraction = (updateDownloadedBytes.toFloat() / total)
+                                .coerceIn(0f, 1f)
+                            LinearProgressIndicator(progress = { fraction })
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "${DesktopUpdater.formatBytes(updateDownloadedBytes)} of " +
+                                    DesktopUpdater.formatBytes(total),
+                            )
+                        } else {
+                            LinearProgressIndicator()
+                            Spacer(Modifier.height(12.dp))
+                            Text(DesktopUpdater.formatBytes(updateDownloadedBytes) + " downloaded")
+                        }
+                    }
+                    DesktopUpdatePhase.READY -> Text(
+                        when (update.installKind) {
+                            DesktopUpdateChecker.InstallKind.WINDOWS_SETUP ->
+                                "ChordWave ${update.version} is downloaded. Installing closes " +
+                                    "the app and opens the installer."
+                            DesktopUpdateChecker.InstallKind.MAC_DMG ->
+                                "ChordWave ${update.version} is downloaded. Installing opens " +
+                                    "the disk image — drag ChordWave into Applications, then " +
+                                    "reopen it."
+                            DesktopUpdateChecker.InstallKind.LINUX_APPIMAGE ->
+                                "ChordWave ${update.version} is downloaded. Installing replaces " +
+                                    "this AppImage and closes the app — reopen it to run the " +
+                                    "new version."
+                            DesktopUpdateChecker.InstallKind.LINUX_DEB ->
+                                "ChordWave ${update.version} is downloaded. Installing opens " +
+                                    "the package installer."
+                            DesktopUpdateChecker.InstallKind.BROWSER_ONLY ->
+                                "ChordWave ${update.version} is downloaded."
+                        },
+                    )
+                    DesktopUpdatePhase.INSTALLING -> Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(
+                            Modifier.size(16.dp),
+                            color = DesktopAccent,
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(DesktopStrings["d_installing", "Installing…"])
+                    }
+                    DesktopUpdatePhase.DONE -> Text(
+                        when (val outcome = updateOutcome) {
+                            is DesktopUpdater.InstallOutcome.Opened ->
+                                if (outcome.kind == DesktopUpdateChecker.InstallKind.MAC_DMG) {
+                                    "The disk image is open — drag ChordWave into Applications, " +
+                                        "then quit and reopen the app to run ${update.version}."
+                                } else {
+                                    "The package installer is open — follow it to install " +
+                                        "${update.version}."
+                                }
+                            is DesktopUpdater.InstallOutcome.Saved ->
+                                "Saved to ${outcome.file.absolutePath} — run it to use " +
+                                    "${update.version}."
+                            else -> "ChordWave ${update.version} is ready."
+                        },
+                    )
+                    DesktopUpdatePhase.FAILED -> Text(
+                        "The update could not be downloaded." +
+                            (updateError?.takeIf { it.isNotBlank() }?.let { "\n\n$it" } ?: ""),
+                    )
+                }
+            },
+            confirmButton = {
+                when (updatePhase) {
+                    DesktopUpdatePhase.OFFER -> {
+                        val url = update.downloadUrl
+                        val fileName = update.fileName
+                        if (url != null && fileName != null) {
+                            TextButton(onClick = {
+                                updatePhase = DesktopUpdatePhase.DOWNLOADING
+                                updateDownloadedBytes = 0L
+                                updateTotalBytes = null
+                                updateError = null
+                                var lastPost = 0L
+                                updateJob = scope.launch {
+                                    DesktopUpdater.download(url, fileName) { downloaded, total ->
+                                        val now = System.currentTimeMillis()
+                                        if (now - lastPost >= 100 || downloaded == total) {
+                                            lastPost = now
+                                            updateDownloadedBytes = downloaded
+                                            updateTotalBytes = total
+                                        }
+                                    }.fold(
+                                        onSuccess = { file ->
+                                            updateDownloadedFile = file
+                                            updateDownloadedBytes = file.length()
+                                            updatePhase = DesktopUpdatePhase.READY
+                                        },
+                                        onFailure = { error ->
+                                            updateError = error.message
+                                            updatePhase = DesktopUpdatePhase.FAILED
+                                        },
+                                    )
+                                }
+                            }) { Text(DesktopStrings["d_download", "Download"]) }
+                        } else {
+                            TextButton(onClick = {
+                                DesktopExternalLinks.open(update.releaseUrl)
+                                dismissUpdate()
+                            }) { Text(DesktopStrings["d_open_in_browser", "Open in browser"]) }
+                        }
+                    }
+                    DesktopUpdatePhase.READY -> TextButton(onClick = {
+                        val file = updateDownloadedFile ?: return@TextButton
+                        updatePhase = DesktopUpdatePhase.INSTALLING
+                        scope.launch(Dispatchers.IO) {
+                            DesktopUpdater.install(file, update.installKind).fold(
+                                onSuccess = { outcome ->
+                                    when (outcome) {
+                                        DesktopUpdater.InstallOutcome.QuitNow -> {
+                                            runCatching { playbackEngine.shutdown() }
+                                            runCatching { DesktopWindowsMedia.stop() }
+                                            exitProcess(0)
+                                        }
+                                        else -> {
+                                            updateOutcome = outcome
+                                            updatePhase = DesktopUpdatePhase.DONE
+                                        }
+                                    }
+                                },
+                                onFailure = { error ->
+                                    updateError = error.message
+                                    updatePhase = DesktopUpdatePhase.FAILED
+                                },
+                            )
+                        }
+                    }) { Text(DesktopStrings["d_install_update", "Install update"]) }
+                    DesktopUpdatePhase.FAILED -> TextButton(onClick = {
+                        updatePhase = DesktopUpdatePhase.OFFER
+                    }) { Text(DesktopStrings["d_try_again", "Try again"]) }
+                    DesktopUpdatePhase.DONE -> TextButton(onClick = dismissUpdate) {
+                        Text(DesktopStrings["done", "Done"])
+                    }
+                    else -> {}
+                }
+            },
+            dismissButton = {
+                when (updatePhase) {
+                    DesktopUpdatePhase.OFFER -> TextButton(onClick = dismissUpdate) {
+                        Text(DesktopStrings["d_later", "Later"])
+                    }
+                    DesktopUpdatePhase.DOWNLOADING -> TextButton(onClick = {
+                        updateJob?.cancel()
+                        updateJob = null
+                        updatePhase = DesktopUpdatePhase.OFFER
+                    }) { Text(DesktopStrings["cancel", "Cancel"]) }
+                    DesktopUpdatePhase.READY -> TextButton(onClick = dismissUpdate) {
+                        Text(DesktopStrings["d_later", "Later"])
+                    }
+                    DesktopUpdatePhase.FAILED -> TextButton(onClick = {
+                        DesktopExternalLinks.open(update.releaseUrl)
+                        dismissUpdate()
+                    }) { Text(DesktopStrings["d_open_in_browser", "Open in browser"]) }
+                    else -> {}
                 }
             },
         )
@@ -4028,6 +4268,8 @@ fun ChordWaveDesktopApp() {
                                     },
                                     onOpenIntegrations = { overlays.settingsPage = DesktopSettingsPage.INTEGRATIONS },
                                     onOpenLicenses = { overlays.settingsPage = DesktopSettingsPage.LICENSES },
+                                    updateCheckState = updateCheckState,
+                                    onCheckForUpdates = runManualUpdateCheck,
                                 )
                                 DesktopSettingsPage.EQUALIZER -> DesktopEqualizerDialog(onDismiss = ::goBack)
                                 DesktopSettingsPage.AUDIO_OUTPUT -> DesktopAudioOutputDialog(onDismiss = ::goBack)
@@ -6458,6 +6700,8 @@ private fun DesktopSettingsScreen(
     onTestSource: (DesktopSourceConfig) -> Unit,
     onOpenIntegrations: () -> Unit,
     onOpenLicenses: () -> Unit,
+    updateCheckState: DesktopUpdateCheckState,
+    onCheckForUpdates: () -> Unit,
 ) {
     var editingSource by remember { mutableStateOf<DesktopSourceConfig?>(null) }
     val sourceProbeKey = sourceConfigs
@@ -6966,6 +7210,24 @@ private fun DesktopSettingsScreen(
                         hideVolumeBar,
                         DesktopAppearanceSettings::setHideVolumeBar,
                     )
+                    SettingsRow(
+                        Icons.Rounded.SystemUpdate,
+                        DesktopStrings["d_check_for_updates", "Check for updates"],
+                        when (updateCheckState) {
+                            DesktopUpdateCheckState.CHECKING ->
+                                DesktopStrings["d_checking_for_updates", "Checking…"]
+                            DesktopUpdateCheckState.UP_TO_DATE ->
+                                DesktopStrings["d_you_are_up_to_date", "You are up to date"]
+                            DesktopUpdateCheckState.FAILED ->
+                                DesktopStrings[
+                                    "d_could_not_check_for_updates",
+                                    "Could not check for updates — tap to try again",
+                                ]
+                            DesktopUpdateCheckState.IDLE ->
+                                "ChordWave ${DesktopUpdateChecker.currentVersion}"
+                        },
+                        onCheckForUpdates,
+                    )
                 }
             }
             if (section == DesktopSettingsSection.AUDIO_QUALITY) item {
@@ -7155,7 +7417,7 @@ private fun DesktopSettingsScreen(
 /** The line at the foot of the settings sheet, as Android has it. */
 @Composable
 private fun DesktopSettingsFooter(onLicenses: () -> Unit) {
-    val version = remember { System.getProperty("chordwave.version") ?: "2.2.0" }
+    val version = remember { System.getProperty("chordwave.version") ?: "2.2.1" }
     val linkStyles = TextLinkStyles(
         style = SpanStyle(color = DesktopAccent, textDecoration = TextDecoration.Underline),
     )
