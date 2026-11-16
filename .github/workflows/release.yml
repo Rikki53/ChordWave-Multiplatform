@@ -168,8 +168,11 @@ jobs:
     strategy:
       matrix:
         include:
-          # macos-14 was retired 2 Nov 2026; macos-15 is the current arm64 image.
-          - os: macos-15
+          # macos-14 was retired 2 Nov 2026. macos-15 arm64 was the leg until
+          # 16-17 Nov 2026, when GitHub cancelled the queued job twice after
+          # exactly 15 min without ever assigning a runner (runs 43911163103
+          # attempts 1-2); macos-26 is the current arm64 image (and macos-latest).
+          - os: macos-26
             arch: arm64
           # macos-15-intel is GitHub's last x86_64 macOS runner, supported
           # through ~August 2027. After that, Intel builds need a self-hosted
