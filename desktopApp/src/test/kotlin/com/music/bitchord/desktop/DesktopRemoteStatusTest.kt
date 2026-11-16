@@ -46,10 +46,17 @@ class DesktopRemoteStatusTest {
 
     @Test
     fun `parse returns null for wrong types (fail-open)`() {
-        // A "true" string where a boolean belongs must not suspend anyone.
-        assertNull(DesktopRemoteStatus.parse("""{"suspended":"true"}"""))
         assertNull(DesktopRemoteStatus.parse("""{"suspended":1}"""))
         assertNull(DesktopRemoteStatus.parse("""[true]"""))
+    }
+
+    @Test
+    fun `a quoted true still suspends (kotlinx reads quoted booleans leniently)`() {
+        // kotlinx.serialization-json accepts "true"/"false" in quotes; only that literal
+        // content suspends, anything else fails open — so a hand-edited file stays safe.
+        assertEquals(true, DesktopRemoteStatus.parse("""{"suspended":"true"}""")?.suspended)
+        assertEquals(false, DesktopRemoteStatus.parse("""{"suspended":"false"}""")?.suspended)
+        assertNull(DesktopRemoteStatus.parse("""{"suspended":"yes"}"""))
     }
 
     @Test
