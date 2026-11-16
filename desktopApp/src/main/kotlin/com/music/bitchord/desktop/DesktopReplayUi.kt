@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.artworkAt
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale

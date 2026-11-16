@@ -1,10 +1,15 @@
 # Maintainers
 
-This document lists the maintainers responsible for BitChord.
+This document lists the maintainers responsible for ChordWave.
 
 | Maintainer | GitHub | Responsibilities |
 |---|---|---|
-| Kushagra Singh | [@kushagrasinghx](https://github.com/kushagrasinghx) | Project creator, core architecture, release management, and PR reviews |
+| Riki Nurjaman | [@Rikki53](https://github.com/Rikki53) | Project lead, rebrand, release management, and PR reviews |
+
+ChordWave is a rebrand of the BitChord desktop/iOS port: the original BitChord for
+Android was created by [Kushagra Singh](https://github.com/kushagrasinghx), and the
+desktop/iOS port by [fumakill4](https://github.com/fumakill4). See the
+[Attribution](README.md#attribution) section of the README.
 
 ## Responsibilities
 
@@ -12,7 +17,9 @@ Maintainers oversee project direction, repository maintenance, review and mergin
 
 ## Contributors
 
-This list is automatically generated from GitHub repository contributor data.
+This list is automatically generated from GitHub repository contributor data. The names below
+are the contributors to the upstream BitChord project this repository descends from; the list
+regenerates from this repository's own contributor data on the next update.
 
 <!-- BEGIN CONTRIBUTORS -->
 - [@kushagrasinghx](https://github.com/kushagrasinghx)

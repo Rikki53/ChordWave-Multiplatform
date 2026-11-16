@@ -13,12 +13,12 @@ data class ParsedJamInvite(
     val serverUrl: String? = null,
 )
 
-/** Relays a BitChord web or scheme invite from [com.music.bitchord.MainActivity] to Compose. */
+/** Relays a ChordWave web or scheme invite from [com.music.bitchord.MainActivity] to Compose. */
 object JamInviteLink {
 
     const val ORIGIN = "https://bitchord.kushagrasingh.in"
 
-    private const val EXTRA_CONSUMED = "bitchord.jamInviteConsumed"
+    private const val EXTRA_CONSUMED = "chordwave.jamInviteConsumed"
     private const val HOST = "bitchord.kushagrasingh.in"
     private const val CUSTOM_SCHEME = "bitchord"
     private const val CUSTOM_HOST = "party"

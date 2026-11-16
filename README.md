@@ -1,96 +1,92 @@
 <div align="center">
 
-<img src="Logo.png" alt="BitChord app icon" width="128" height="128">
+<img src="Logo.png" alt="ChordWave app icon" width="128" height="128">
 
-# BitChord for Apple
+# ChordWave
 
-**An open-source, native music client for Mac, iPhone and iPad.**<br>
-YouTube Music, your own library, DJ-style Automix and Hi-Res playback.
+**An open-source music client for Windows, macOS, Linux, iPhone and iPad.**<br>
+YouTube Music, your own library, DJ-style Automix and Hi-Res playback — free, no ads.
 
 <br>
 
-[![Release](https://img.shields.io/github/v/release/fumakill4/BitChord?style=for-the-badge&label=release&color=2F81F7)](https://github.com/fumakill4/BitChord/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Rikki53/ChordWave-Multiplatform?style=for-the-badge&label=release&color=2F81F7)](https://github.com/Rikki53/ChordWave-Multiplatform/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL--3.0-E8743B?style=for-the-badge)](LICENSE)
-[![Platforms](https://img.shields.io/badge/macOS_14+_·_iOS_17+-F5263F?style=for-the-badge)](#download)
+[![Platforms](https://img.shields.io/badge/Windows_·_macOS_·_Linux_·_iOS_17+-5DF0CB?style=for-the-badge)](#download)
 
 [![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-7F52FF?logo=kotlin&logoColor=white)](shared)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-4285F4?logo=jetpackcompose&logoColor=white)](desktopApp)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-F05138?logo=swift&logoColor=white)](#download)
-[![Apple Silicon](https://img.shields.io/badge/Apple_Silicon-555555?logo=apple&logoColor=white)](#download)
 
 <br>
 
-**[Download](#download)** · **[Features](#features)** · **[Install](#install)** · **[Support](#support)** · **[Original Repo](https://github.com/kushagrasinghx/BitChord)** · **[Disclaimer](#disclaimer)**
+**[Download](#download)** · **[Features](#features)** · **[Install](#install)** · **[Attribution](#attribution)** · **[Disclaimer](#disclaimer)**
 
 <br>
 
-<img src="Banner.png" alt="BitChord on Mac and iOS" width="100%">
+<img src="Banner.png" alt="ChordWave on desktop and iOS" width="100%">
 
 </div>
 
-> [!IMPORTANT]
-> This BitChord is a dedicated Apple platform (macOS Apple Silicon & iOS)  and Windows,  Fumakill4's own fork of BitChord for Android, rebuilt for macOS, iPhone, iPad, and Windows so the Android team doesn't make or support it.
+> [!NOTE]
+> ChordWave is the full desktop app. Looking for the lightweight Windows-only build instead? See [ChordWave Lite](https://github.com/Rikki53/BitChord-PC-Continued). The Android phone app lives in [Rikki53/ChordWave](https://github.com/Rikki53/ChordWave); the Android, TV and Wear modules in this repository are the same codebase's phone builds, kept for development.
 
 ---
 
 ## <a id="download"></a>Download
 
-<div align="center">
+One release per version carries every platform. Grab the latest from the
+**[releases page](https://github.com/Rikki53/ChordWave-Multiplatform/releases/latest)**:
 
-### 💻 macOS (Apple Silicon)
-<a href="https://github.com/fumakill4/BitChord/releases/download/macos-v1.9.1.E4/BitChord-1.9.1.E4-macos-arm64.dmg">
-  <img src="https://cdn.jsdelivr.net/gh/JMcrafter26/badges@main/src/assets/supported/macos/cozy.svg" alt="Download for macOS" height="60">
-</a>
+| Platform | File | Notes |
+|---|---|---|
+| Windows | `ChordWave-<version>-windows-x64-setup.exe` | Recommended installer (per-user, no admin needed) |
+| Windows | `ChordWave-<version>-windows-x64-portable.zip` | Unzip and run `ChordWave.exe`, no install |
+| Windows | `ChordWave-<version>-windows-x64.msi` | For managed deployments |
+| macOS Apple Silicon | `ChordWave-<version>-macos-arm64.dmg` | M1/M2/M3/M4 and later |
+| macOS Intel | `ChordWave-<version>-macos-x64.dmg` | Intel Macs |
+| macOS | `ChordWave-<version>-macos-*.pkg` / `.zip` | Installer package / app bundle archive |
+| Linux | `ChordWave-<version>-linux-x86_64.AppImage` | `chmod +x` and run on any distribution |
+| Linux | `ChordWave-<version>-linux-amd64.deb` | Debian, Ubuntu and derivatives |
+| Linux | `ChordWave-<version>-linux-x86_64.rpm` | Fedora, RHEL and openSUSE |
+| iOS | `ChordWave-<version>-ios-unsigned.ipa` | Sideload (see below) |
 
-<br/>
-
-**[Download BitChord-1.9.1.E4-macos-arm64.dmg (Latest Apple Silicon Release)](https://github.com/fumakill4/BitChord/releases/download/macos-v1.9.1.E4/BitChord-1.9.1.E4-macos-arm64.dmg)**  
-<sub>macOS Apple Silicon · Build 1.9.1.E4 · [Release notes](https://github.com/fumakill4/BitChord/releases/tag/macos-v1.9.1.E4)</sub>
-
-<br/>
-
-### 📱 iPhone & iPad (iOS 17+)
-<a href="https://github.com/fumakill4/BitChord/releases/tag/v1.9.1-ios">
-  <img src="https://cdn.jsdelivr.net/gh/JMcrafter26/badges@main/src/assets/supported/ios/cozy.svg" alt="Download for iOS" height="60">
-</a>
-
-<br/>
-
-**[Download BitChord-iOS-v2.0.0-build1.ipa (Dedicated iOS Release)](https://github.com/fumakill4/BitChord/releases/download/v2.0.0-ios-build1/BitChord-2.0.0-build1-ios-unsigned.ipa)**  
-<sub>View the dedicated **[iOS v1.9.1 Release Page](https://github.com/fumakill4/BitChord/releases/tag/v1.9.1-ios)**</sub>
-
-<br/>
-
-### 🪟 Windows 10 & 11 (64-bit)
-<a href="https://github.com/fumakill4/BitChord/releases/tag/v1.9.1-windows">
-  <img src="https://cdn.jsdelivr.net/gh/JMcrafter26/badges@main/src/assets/supported/windows/cozy.svg" alt="Download for Windows" height="60">
-</a>
-
-<br/>
-
-**[Download BitChord-1.9.1-windows-x64-setup.exe (Windows Installer)](https://github.com/fumakill4/BitChord/releases/download/v1.9.1-windows/BitChord-1.9.1-windows-x64-setup.exe)**  
-<sub>Or get the portable version: **[BitChord-1.9.1-windows-x64-portable.zip](https://github.com/fumakill4/BitChord/releases/download/v1.9.1-windows/BitChord-1.9.1-windows-x64-portable.zip)**</sub>
-
-</div>
+Every desktop download carries its own Java runtime, the FFmpeg and ONNX natives, the Automix analyser and its models. Nothing else has to be installed first — no JDK, no codec pack.
 
 ---
 
 ## <a id="install"></a>Install
 
-### 💻 Mac (Apple Silicon)
+### 🪟 Windows (10 & 11)
 
-1. Download **`BitChord-1.9.1.E4-macos-arm64.dmg`** from the [macOS release](https://github.com/fumakill4/BitChord/releases/tag/macos-v1.9.1.E4) page.
-2. Open the `.dmg` file and drag **BitChord.app** into your **Applications** folder.
-3. **Gatekeeper Notice:** Because this is an open-source build without an Apple Developer ID signature, Gatekeeper may display a prompt on the first launch (*"BitChord is from an unidentified developer"*).  
+**Option A — Setup Installer (Recommended):**
+1. Download **`ChordWave-<version>-windows-x64-setup.exe`** from the [releases page](https://github.com/Rikki53/ChordWave-Multiplatform/releases/latest).
+2. Run the `.exe` installer. It installs for the current user (no administrator permission required) and creates shortcuts in your Start Menu and Desktop.
+3. **SmartScreen Notice:** If Windows SmartScreen displays a warning (*"Windows protected your PC"*), click **More info** and select **Run anyway**.
+
+**Option B — Portable (.zip):**
+1. Download **`ChordWave-<version>-windows-x64-portable.zip`**.
+2. Extract the archive to any folder or external drive.
+3. Launch **`ChordWave.exe`** directly without installation.
+
+### 💻 Mac (Apple Silicon & Intel)
+
+1. Download the `.dmg` for your Mac — `macos-arm64` for Apple Silicon, `macos-x64` for Intel — from the [releases page](https://github.com/Rikki53/ChordWave-Multiplatform/releases/latest).
+2. Open the `.dmg` file and drag **ChordWave.app** into your **Applications** folder.
+3. **Gatekeeper Notice:** Because this is an open-source build without an Apple Developer ID signature, Gatekeeper may display a prompt on the first launch (*"ChordWave is from an unidentified developer"*).  
    You can easily open it by running this command in Terminal:
    ```sh
-   xattr -cr /Applications/BitChord.app
+   xattr -cr /Applications/ChordWave.app
    ```
-   Or right-click (Control-click) `BitChord.app` in Finder and select **Open**.
+   Or right-click (Control-click) `ChordWave.app` in Finder and select **Open**.
+
+### 🐧 Linux
+
+- **AppImage:** `chmod +x ChordWave-*.AppImage` and run it.
+- **deb:** `sudo apt install ./ChordWave-*.deb`
+- **rpm:** `sudo dnf install ./ChordWave-*.rpm`
 
 ### 📱 iPhone & iPad (Sideloading)
 
-1. Download **`BitChord-iOS-v1.9.1.ipa`** from the [iOS Release](https://github.com/fumakill4/BitChord/releases/tag/v1.9.1-ios) page.
+1. Download **`ChordWave-<version>-ios-unsigned.ipa`** from the [releases page](https://github.com/Rikki53/ChordWave-Multiplatform/releases/latest).
 2. Sideload it using your preferred sideloading tool:
    - **AltStore / SideStore**: Open the IPA in the app and sign with your Apple ID.
    - **Sideloadly**: Connect your device, drag the IPA into Sideloadly, and click Start.
@@ -98,23 +94,11 @@ YouTube Music, your own library, DJ-style Automix and Hi-Res playback.
    - **Scarlet**: Direct on-device installation.
 3. If prompted by iOS, go to **Settings → General → VPN & Device Management** and trust your developer certificate.
 
-### 🪟 Windows (10 & 11)
-
-**Option A — Setup Installer (Recommended):**
-1. Download **`BitChord-1.9.1-windows-x64-setup.exe`** from the [Windows Release](https://github.com/fumakill4/BitChord/releases/tag/v1.9.1-windows) page.
-2. Run the `.exe` installer. It installs for the current user (no administrator permission required) and creates shortcuts in your Start Menu and Desktop.
-3. **SmartScreen Notice:** If Windows SmartScreen displays a warning (*"Windows protected your PC"*), click **More info** and select **Run anyway**.
-
-**Option B — Portable (.zip):**
-1. Download **`BitChord-1.9.1-windows-x64-portable.zip`**.
-2. Extract the archive to any folder or external drive.
-3. Launch **`BitChord.exe`** directly without installation.
-
 ---
 
 <div align="center">
 
-<img src="Banner.png" alt="BitChord banner" width="100%" />
+<img src="Banner.png" alt="ChordWave banner" width="100%" />
 
 <h1><a id="features"></a>Features</h1>
 
@@ -135,6 +119,7 @@ YouTube Music, your own library, DJ-style Automix and Hi-Res playback.
 #### Connectivity & Accounts
 - **Sign in with your Google account** for personalized content.
 - **Spotify integration** — connect your account to play your playlists and Liked Songs.
+- **Listen Together** — synced listening parties, hosted on ChordWave's own party server by default; a custom server can be configured in Settings.
 - **Discord Rich Presence** — in-app login, live track/artist/album and progress.
 - **Scrobbling** to Last.fm and ListenBrainz.
 - **Pluggable sources** — add, edit, test and health-check module sources.
@@ -165,32 +150,29 @@ YouTube Music, your own library, DJ-style Automix and Hi-Res playback.
 
 ---
 
+<div align="center">
+
+<h1><a id="attribution"></a>Attribution</h1>
+
+ChordWave stands on other people's work, and says so:
+
+- **Original BitChord** for Android by [Kushagra Singh](https://github.com/kushagrasinghx) — [kushagrasinghx/BitChord](https://github.com/kushagrasinghx/BitChord).
+- **Desktop & iOS port** (Kotlin Multiplatform + Compose Multiplatform) by [fumakill4](https://github.com/fumakill4) — [fumakill4/BitChord](https://github.com/fumakill4/BitChord).
+- **Rebranded as ChordWave** by [Riki Nurjaman](https://github.com/Rikki53).
+
+This repository is a standalone copy: it keeps the full history of the port it came from, under the same GPL-3.0 license.
+
+</div>
+
+---
 
 <div align="center">
 
 <h1><a id="support"></a>Support</h1>
 
-BitChord is free and always will be — if it's earned a spot in your rotation, you can chip in here:
+ChordWave is free and always will be — no ads, no paywall.
 
-<br/><br/>
-
-<img src="Support.png" alt="Support BitChord" width="100%" />
-
-<br/>
-
-<details>
-<summary><b>🪙 Crypto Wallet Address (USDT BEP20)</b></summary>
-<br/>
-
-```text
-Network: BNB Smart Chain (BEP20)
-Address: 0x1b683431bc9d503fa170033fd133378465197c5f
-```
-
-> [!WARNING]
-> Only send USDT via BNB Smart Chain (BEP20). Sending via any other network will result in permanent loss of funds.
-
-</details>
+If something breaks or you have an idea, please [open an issue](https://github.com/Rikki53/ChordWave-Multiplatform/issues).
 
 </div>
 
@@ -200,12 +182,12 @@ Address: 0x1b683431bc9d503fa170033fd133378465197c5f
 
 <h1><a id="disclaimer"></a>Disclaimer & Legal Notice</h1>
 
-BitChord is an independent, community-driven third-party audio player and client. It is **not** associated with Google LLC, YouTube Music, Deezer, Telegram, or any of their parent companies.
+ChordWave is an independent, community-driven third-party audio player and client. It is **not** associated with Google LLC, YouTube Music, Deezer, Telegram, or any of their parent companies.
 
-* **No Media Hosting:** BitChord does not host, upload, or store copyrighted music files. It operates strictly as an interface to scan local device storage or stream media directly from public, public-facing, or user-authenticated APIs.
+* **No Media Hosting:** ChordWave does not host, upload, or store copyrighted music files. It operates strictly as an interface to scan local device storage or stream media directly from public, public-facing, or user-authenticated APIs.
 * **Fair Use & API Usage:** This software is created solely for personal research, educational, and fair-use purposes. The user is entirely responsible for ensuring their usage aligns with their local copyright laws and YouTube Terms of Service.
-* **No Ad-Blocking Guarantee:** While BitChord focuses on providing a clean listening environment, it does not guarantee permanent bypasses or modifications to commercial third-party platform conditions.
-* **Copyleft:** BitChord is free software under the GPLv3. The license does not let anyone forbid others from selling or redistributing copies, but any distribution must come with the Corresponding Source under the same license.
+* **No Ad-Blocking Guarantee:** While ChordWave focuses on providing a clean listening environment, it does not guarantee permanent bypasses or modifications to commercial third-party platform conditions.
+* **Copyleft:** ChordWave is free software under the GPLv3. The license does not let anyone forbid others from selling or redistributing copies, but any distribution must come with the Corresponding Source under the same license.
 
 </div>
 

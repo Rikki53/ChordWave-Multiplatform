@@ -56,7 +56,7 @@ internal object DesktopWindowsMedia {
         // library's pump thread was then still running when the DLL unloaded, and destroying a
         // joinable std::thread aborts the process — every quit ended in a native crash.
         if (shutdownHookAdded.compareAndSet(false, true)) {
-            Runtime.getRuntime().addShutdownHook(Thread(::stop, "bitchord-smtc-stop"))
+            Runtime.getRuntime().addShutdownHook(Thread(::stop, "chordwave-smtc-stop"))
         }
     }
 

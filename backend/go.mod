@@ -1,4 +1,4 @@
-module github.com/KabirSinghBhatia/BitChord/backend
+module github.com/Rikki53/ChordWave-Multiplatform/backend
 
 go 1.27.0
 

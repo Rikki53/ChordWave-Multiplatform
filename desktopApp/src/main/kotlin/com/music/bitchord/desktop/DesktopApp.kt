@@ -272,14 +272,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import bitchord.desktopapp.generated.resources.Res
-import bitchord.desktopapp.generated.resources.logo
-import bitchord.desktopapp.generated.resources.logo_mark
-import bitchord.desktopapp.generated.resources.sf_pro_display_bold
-import bitchord.desktopapp.generated.resources.sf_pro_display_heavy
-import bitchord.desktopapp.generated.resources.sf_pro_display_medium
-import bitchord.desktopapp.generated.resources.sf_pro_display_regular
-import bitchord.desktopapp.generated.resources.sf_pro_display_semibold
+import chordwave.desktopapp.generated.resources.Res
+import chordwave.desktopapp.generated.resources.logo
+import chordwave.desktopapp.generated.resources.logo_mark
+import chordwave.desktopapp.generated.resources.sf_pro_display_bold
+import chordwave.desktopapp.generated.resources.sf_pro_display_heavy
+import chordwave.desktopapp.generated.resources.sf_pro_display_medium
+import chordwave.desktopapp.generated.resources.sf_pro_display_regular
+import chordwave.desktopapp.generated.resources.sf_pro_display_semibold
 import com.music.bitchord.data.model.ArtistPage
 import com.music.bitchord.data.model.BrowseItem
 import com.music.bitchord.data.model.BrowseType
@@ -318,7 +318,7 @@ import com.music.bitchord.data.settings.LastPlayerScreen
 import com.music.bitchord.data.settings.SmartAnalysis
 import com.music.bitchord.data.settings.TrackAnalysisState
 import com.music.bitchord.data.settings.TransitionWindow
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -518,7 +518,7 @@ internal enum class DesktopRepeatMode {
 }
 
 @Composable
-fun BitChordDesktopApp() {
+fun ChordWaveDesktopApp() {
     val scope = rememberCoroutineScope()
     // Filled once the audio engine exists. Local playback helpers use this single hook so every
     // transport and queue gesture reaches Listen Together without duplicating protocol logic.
@@ -536,7 +536,7 @@ fun BitChordDesktopApp() {
             title = { Text(DesktopStrings["d_update_available", "Update available"]) },
             text = {
                 Text(
-                    "BitChord ${update.version} is out — you have ${DesktopUpdateChecker.currentVersion}." +
+                    "ChordWave ${update.version} is out — you have ${DesktopUpdateChecker.currentVersion}." +
                         (update.notes?.takeIf { it.isNotBlank() }?.let { "\n\n${it.take(600)}" } ?: ""),
                 )
             },
@@ -4387,7 +4387,7 @@ fun BitChordDesktopApp() {
                             if (downloadInProgress.isNotEmpty()) {
                                 DesktopActionButton(
                                     "Queue · ${downloadInProgress.size}",
-                                    BitChordIcons.Download,
+                                    ChordWaveIcons.Download,
                                     onClick = { overlays.downloadManager = true },
                                     modifier = Modifier
                                         .align(Alignment.BottomEnd)
@@ -4481,7 +4481,7 @@ private fun DesktopTopBar(
                 // The mark leads the player's own controls, now that the sidebar runs to the top.
                 Image(
                     painter = painterResource(Res.drawable.logo_mark),
-                    contentDescription = "BitChord",
+                    contentDescription = "ChordWave",
                     modifier = Modifier.size(width = 28.dp, height = 18.dp),
                 )
                 Spacer(Modifier.width(14.dp))
@@ -4501,7 +4501,7 @@ private fun DesktopTopBar(
                     ) {
                         DesktopToolbarButton(onClick = { onShuffleChange(!shuffle) }, size = 32.dp) {
                             Icon(
-                                BitChordIcons.Shuffle,
+                                ChordWaveIcons.Shuffle,
                                 DesktopStrings["shuffle", "Shuffle"],
                                 tint = if (shuffle) DesktopAccent else DesktopSecondary,
                                 modifier = Modifier.size(18.dp),
@@ -4554,7 +4554,7 @@ private fun DesktopTopBar(
                                 )
                             } else {
                                 Icon(
-                                    BitChordIcons.Repeat,
+                                    ChordWaveIcons.Repeat,
                                     "Repeat ${repeatMode.label()}",
                                     tint = tint,
                                     modifier = Modifier.size(18.dp),
@@ -4582,7 +4582,7 @@ private fun DesktopTopBar(
                                 if (song == null) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Icon(
-                                            BitChordIcons.MusicNote,
+                                            ChordWaveIcons.MusicNote,
                                             DesktopStrings["playback_channel_name", "Now playing"],
                                             tint = DesktopSecondary.copy(alpha = 0.65f),
                                             modifier = Modifier.size(21.dp),
@@ -4671,7 +4671,7 @@ private fun DesktopTopBar(
                     }
                     DesktopToolbarButton(onClick = onOpenLyrics, size = 32.dp) {
                         Icon(
-                            BitChordIcons.LyricsQuote,
+                            ChordWaveIcons.LyricsQuote,
                             DesktopStrings["lyrics", "Lyrics"],
                             tint = if (sidePanel == DesktopSidePanel.LYRICS) Color.White else DesktopSecondary,
                             modifier = Modifier.size(19.dp),
@@ -4679,7 +4679,7 @@ private fun DesktopTopBar(
                     }
                     DesktopToolbarButton(onClick = onOpenQueue, size = 32.dp) {
                         Icon(
-                            BitChordIcons.Queue,
+                            ChordWaveIcons.Queue,
                             DesktopStrings["queue", "Queue"],
                             tint = if (sidePanel == DesktopSidePanel.QUEUE) Color.White else DesktopSecondary,
                             modifier = Modifier.size(19.dp),
@@ -4809,16 +4809,16 @@ private fun DesktopSidebar(
                 onFocusChanged = { searchFocused = it },
             )
             Spacer(Modifier.height(20.dp))
-            DesktopSidebarItem(BitChordIcons.Home, DesktopStrings["home", "Home"], destination == DesktopDestination.LISTEN_NOW) {
+            DesktopSidebarItem(ChordWaveIcons.Home, DesktopStrings["home", "Home"], destination == DesktopDestination.LISTEN_NOW) {
                 onDestinationSelected(DesktopDestination.LISTEN_NOW)
             }
-            DesktopSidebarItem(BitChordIcons.Explore, "Explore", destination == DesktopDestination.EXPLORE) {
+            DesktopSidebarItem(ChordWaveIcons.Explore, "Explore", destination == DesktopDestination.EXPLORE) {
                 onDestinationSelected(DesktopDestination.EXPLORE)
             }
-            DesktopSidebarItem(BitChordIcons.Library, "Library", destination == DesktopDestination.LIBRARY) {
+            DesktopSidebarItem(ChordWaveIcons.Library, "Library", destination == DesktopDestination.LIBRARY) {
                 onDestinationSelected(DesktopDestination.LIBRARY)
             }
-            DesktopSidebarItem(BitChordIcons.Search, "Search", destination == DesktopDestination.SEARCH) {
+            DesktopSidebarItem(ChordWaveIcons.Search, "Search", destination == DesktopDestination.SEARCH) {
                 onDestinationSelected(DesktopDestination.SEARCH)
             }
             Spacer(Modifier.height(6.dp))
@@ -4826,7 +4826,7 @@ private fun DesktopSidebar(
             Spacer(Modifier.height(12.dp))
             if (HISTORY_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
-                    BitChordIcons.Clock,
+                    ChordWaveIcons.Clock,
                     "History",
                     destination == DesktopDestination.HISTORY,
                     onClick = { onDestinationSelected(DesktopDestination.HISTORY) },
@@ -4836,7 +4836,7 @@ private fun DesktopSidebar(
             val queued by DesktopDownloadQueue.active.collectAsState()
             if (DOWNLOADS_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
-                    BitChordIcons.Download,
+                    ChordWaveIcons.Download,
                     if (queued.isEmpty()) "Downloads" else "Downloads · ${queued.size}",
                     destination == DesktopDestination.DOWNLOADS,
                     onClick = { onDestinationSelected(DesktopDestination.DOWNLOADS) },
@@ -4845,7 +4845,7 @@ private fun DesktopSidebar(
             }
             if (LOCAL_MUSIC_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
-                    BitChordIcons.Library,
+                    ChordWaveIcons.Library,
                     "Local Music",
                     destination == DesktopDestination.LOCAL_MUSIC,
                     onClick = { onDestinationSelected(DesktopDestination.LOCAL_MUSIC) },
@@ -5071,10 +5071,10 @@ private fun DesktopFloatingNavigation(
 ) {
     val tabs = remember {
         listOf(
-            DesktopDestination.LISTEN_NOW to (BitChordIcons.Play to "Play"),
-            DesktopDestination.EXPLORE to (BitChordIcons.Explore to "Explore"),
-            DesktopDestination.LIBRARY to (BitChordIcons.Library to "Library"),
-            DesktopDestination.SEARCH to (BitChordIcons.Search to "Search"),
+            DesktopDestination.LISTEN_NOW to (ChordWaveIcons.Play to "Play"),
+            DesktopDestination.EXPLORE to (ChordWaveIcons.Explore to "Explore"),
+            DesktopDestination.LIBRARY to (ChordWaveIcons.Library to "Library"),
+            DesktopDestination.SEARCH to (ChordWaveIcons.Search to "Search"),
         )
     }
     val selected = tabs.firstOrNull { it.first == destination }?.first ?: DesktopDestination.LIBRARY
@@ -5640,7 +5640,7 @@ internal fun DesktopSearchField(
             decorationBox = { innerTextField ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        BitChordIcons.Search,
+                        ChordWaveIcons.Search,
                         contentDescription = null,
                         tint = DesktopSecondary,
                         modifier = Modifier.size(18.dp),
@@ -5889,7 +5889,7 @@ private fun DesktopArtistPage(
                                 val subscription = artist.subscription
                                 if (subscription != null && onToggleSubscription != null) {
                                     DesktopCircleButton(
-                                        if (subscription.subscribed) BitChordIcons.Check else BitChordIcons.Plus,
+                                        if (subscription.subscribed) ChordWaveIcons.Check else ChordWaveIcons.Plus,
                                         if (subscription.subscribed) {
                                             DesktopStrings["unsubscribe", "Unsubscribe"]
                                         } else {
@@ -5902,7 +5902,7 @@ private fun DesktopArtistPage(
                                     label = DesktopStrings["play", "Play"],
                                     onClick = { if (top.isNotEmpty()) onPlaySongs(top, 0) },
                                 )
-                                DesktopCircleButton(BitChordIcons.Shuffle, DesktopStrings["shuffle", "Shuffle"], onClick = { onShuffle(top) })
+                                DesktopCircleButton(ChordWaveIcons.Shuffle, DesktopStrings["shuffle", "Shuffle"], onClick = { onShuffle(top) })
                             }
                         }
                         artist.description?.takeIf(String::isNotBlank)?.let { blurb ->
@@ -6103,7 +6103,7 @@ private fun DesktopHistoryPage(
             contentPadding = pagePadding(start = DesktopPageGutter, end = DesktopPageGutter, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (history.isEmpty()) item { DesktopEmptyPage(BitChordIcons.Clock, "Nothing played yet", "Songs you play will show up here.") }
+            if (history.isEmpty()) item { DesktopEmptyPage(ChordWaveIcons.Clock, "Nothing played yet", "Songs you play will show up here.") }
             else items(history, key = Song::videoId) {
                 DesktopSongRow(
                     song = it,
@@ -6136,7 +6136,7 @@ private fun DesktopDownloadsPage(
         menu = menu,
         title = DesktopStrings["downloads", "Downloads"],
         subtitle = DesktopStrings["d_available_offline", "Available offline"],
-        emptyIcon = BitChordIcons.Download,
+        emptyIcon = ChordWaveIcons.Download,
         emptyTitle = DesktopStrings["d_no_downloads", "No downloads"],
         emptyDescription = DesktopStrings["d_downloaded_songs_will_appear_here", "Downloaded songs will appear here."],
         persistenceKey = "downloaded",
@@ -6150,7 +6150,7 @@ private fun DesktopLocalMusicPage(
     contentPadding: PaddingValues,
     title: String = "Local Music",
     subtitle: String = "Audio files found in Music and Downloads",
-    emptyIcon: androidx.compose.ui.graphics.vector.ImageVector = BitChordIcons.MusicNote,
+    emptyIcon: androidx.compose.ui.graphics.vector.ImageVector = ChordWaveIcons.MusicNote,
     emptyTitle: String = "No local music",
     emptyDescription: String = "Put audio files in your Music folder and reopen this page.",
     persistenceKey: String = "local",
@@ -6218,7 +6218,7 @@ private fun DesktopLocalMusicPage(
                     view = if (view == DesktopLibraryView.LIST) DesktopLibraryView.GRID else DesktopLibraryView.LIST
                     persistence.saveString("${persistenceKey}_view", view.name)
                 }) {
-                    Icon(if (view == DesktopLibraryView.LIST) BitChordIcons.GridView else BitChordIcons.ListView, "Change view")
+                    Icon(if (view == DesktopLibraryView.LIST) ChordWaveIcons.GridView else ChordWaveIcons.ListView, "Change view")
                 }
             }
             Spacer(Modifier.height(10.dp))
@@ -6261,7 +6261,7 @@ private fun DesktopLibrarySongContent(
     menu: (@Composable (Song) -> Unit)? = null,
 ) {
     if (songs.isEmpty()) {
-        DesktopEmptyPage(BitChordIcons.Search, "No matching music", "Try a different search.")
+        DesktopEmptyPage(ChordWaveIcons.Search, "No matching music", "Try a different search.")
     } else if (view == DesktopLibraryView.GRID) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp),
@@ -6308,7 +6308,7 @@ private fun DesktopLibraryGroupingContent(
     onGroupClick: (Pair<String, List<Song>>) -> Unit,
 ) {
     if (groups.isEmpty()) {
-        DesktopEmptyPage(BitChordIcons.Search, "Nothing here yet", "Music will be grouped as it is added.")
+        DesktopEmptyPage(ChordWaveIcons.Search, "Nothing here yet", "Music will be grouped as it is added.")
     } else if (view == DesktopLibraryView.GRID) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp),
@@ -6343,7 +6343,7 @@ private fun DesktopLibraryGroupingContent(
                         Text(group.key, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
                         Text("${group.value.size} songs", color = DesktopSecondary, style = MaterialTheme.typography.bodySmall)
                     }
-                    Icon(BitChordIcons.Play, DesktopStrings["open", "Open"], tint = DesktopSecondary)
+                    Icon(ChordWaveIcons.Play, DesktopStrings["open", "Open"], tint = DesktopSecondary)
                 }
             }
         }
@@ -6643,7 +6643,7 @@ private fun DesktopSettingsScreen(
                         onShuffleChange,
                     )
                     SettingsRow(
-                        BitChordIcons.Repeat,
+                        ChordWaveIcons.Repeat,
                         DesktopStrings["d_repeat", "Repeat"],
                         "${repeatMode.label()} · Tap to change",
                     ) { onRepeatModeChange(repeatMode.next()) }
@@ -6720,7 +6720,7 @@ private fun DesktopSettingsScreen(
                                 DropdownMenuItem(
                                     text = { Text(language.label) },
                                     trailingIcon = if (language.tag == chosen) {
-                                        { Icon(BitChordIcons.Check, contentDescription = null) }
+                                        { Icon(ChordWaveIcons.Check, contentDescription = null) }
                                     } else {
                                         null
                                     },
@@ -6794,7 +6794,7 @@ private fun DesktopSettingsScreen(
                     }
                     if (DesktopLocalMusic.folder() != null) {
                         SettingsRow(
-                            BitChordIcons.Library,
+                            ChordWaveIcons.Library,
                             DesktopStrings["use_all_audio_folders", "Use all audio folders"],
                             DesktopStrings["use_all_audio_folders_subtitle", "Remove the folder limit and scan music across the device"],
                         ) {
@@ -6942,8 +6942,8 @@ private fun DesktopSettingsScreen(
                     SettingsToggle(
                         DesktopStrings["d_tray_icon", "Tray icon"],
                         DesktopStrings[
-                            "d_show_bitchord_in_the_system_tray_with_playback_controls",
-                            "Show BitChord in the system tray, with playback controls",
+                            "d_show_chordwave_in_the_system_tray_with_playback_controls",
+                            "Show ChordWave in the system tray, with playback controls",
                         ],
                         trayIconEnabled,
                         onTrayIconChange,
@@ -6952,8 +6952,8 @@ private fun DesktopSettingsScreen(
                         SettingsToggle(
                             DesktopStrings["d_keep_playing_when_closed", "Keep playing when closed"],
                             DesktopStrings[
-                                "d_closing_the_window_leaves_bitchord_in_the_tray_instead_o",
-                                "Closing the window leaves BitChord in the tray instead of quitting",
+                                "d_closing_the_window_leaves_chordwave_in_the_tray_instead_o",
+                                "Closing the window leaves ChordWave in the tray instead of quitting",
                             ],
                             closeToTray,
                             onCloseToTrayChange,
@@ -7089,7 +7089,7 @@ private fun DesktopSettingsScreen(
                     }
                     // One entry point, and it creates an addon.
                     SettingsRow(
-                        BitChordIcons.Plus,
+                        ChordWaveIcons.Plus,
                         "Add a source",
                         DesktopSourceKind.ADDON.detail,
                     ) {
@@ -7155,23 +7155,19 @@ private fun DesktopSettingsScreen(
 /** The line at the foot of the settings sheet, as Android has it. */
 @Composable
 private fun DesktopSettingsFooter(onLicenses: () -> Unit) {
-    val version = remember { System.getProperty("bitchord.version") ?: "1.8-beta1" }
+    val version = remember { System.getProperty("chordwave.version") ?: "2.2.0" }
     val linkStyles = TextLinkStyles(
         style = SpanStyle(color = DesktopAccent, textDecoration = TextDecoration.Underline),
     )
     Text(
         text = buildAnnotatedString {
-            append("bitchord $version  ")
-            withLink(LinkAnnotation.Url("https://github.com/kushagrasinghx/BitChord", linkStyles)) {
+            append("ChordWave $version  ")
+            withLink(LinkAnnotation.Url("https://github.com/Rikki53/ChordWave-Multiplatform", linkStyles)) {
                 append("GitHub")
             }
             append("  ")
-            withLink(LinkAnnotation.Url("https://github.com/kushagrasinghx", linkStyles)) {
+            withLink(LinkAnnotation.Url("https://github.com/Rikki53", linkStyles)) {
                 append("Developer")
-            }
-            append("  ")
-            withLink(LinkAnnotation.Url("https://discord.gg/pDdKfrdHY6", linkStyles)) {
-                append("Discord")
             }
             append("  ")
             withLink(LinkAnnotation.Clickable("licenses", linkStyles) { onLicenses() }) {
@@ -7197,7 +7193,7 @@ private fun DesktopLicensesPage(onDismiss: () -> Unit) {
             modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
         )
         Text(
-            DesktopStrings["d_bitchord_is_free_software_and_so_is_everything_it_is_bui", "BitChord is free software, and so is everything it is built on."],
+            DesktopStrings["d_chordwave_is_free_software_and_so_is_everything_it_is_bui", "ChordWave is free software, and so is everything it is built on."],
             color = DesktopSecondary,
             style = MaterialTheme.typography.bodySmall,
         )
@@ -7407,7 +7403,7 @@ private fun DesktopSourceEditorDialog(
                 Text(
                     DesktopStrings[
                         "d_an_addon_server",
-                        "An addon server — BitChord asks it over plain HTTP and runs no code from it. " +
+                        "An addon server — ChordWave asks it over plain HTTP and runs no code from it. " +
                             "A compatible module index also works and is stored as one.",
                     ],
                     color = DesktopSecondary,
@@ -7595,14 +7591,14 @@ private fun DesktopCollectionPage(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            DesktopCircleButton(BitChordIcons.Shuffle, DesktopStrings["shuffle", "Shuffle"], onClick = { onShuffle(songs) })
+                            DesktopCircleButton(ChordWaveIcons.Shuffle, DesktopStrings["shuffle", "Shuffle"], onClick = { onShuffle(songs) })
                             DesktopPlayPill(
                                 label = DesktopStrings["play", "Play"],
                                 onClick = { if (songs.isNotEmpty()) onPlaySongs(songs, 0) },
                                 iconOnly = true,
                             )
                             DesktopCircleButton(
-                                if (searching) Icons.Rounded.Close else BitChordIcons.Search,
+                                if (searching) Icons.Rounded.Close else ChordWaveIcons.Search,
                                 if (searching) DesktopStrings["close_search", "Close search"] else DesktopStrings["search_this_list", "Search this list"],
                                 onClick = {
                                     searching = !searching
@@ -7614,7 +7610,7 @@ private fun DesktopCollectionPage(
                                 DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
                                     DropdownMenuItem(
                                         text = { Text(DesktopStrings["download_all", "Download all"]) },
-                                        leadingIcon = { Icon(BitChordIcons.Download, null) },
+                                        leadingIcon = { Icon(ChordWaveIcons.Download, null) },
                                         onClick = {
                                             moreOpen = false
                                             onDownloadAll(songs)
@@ -7829,7 +7825,7 @@ private fun DesktopCollectionSongRow(
             onToggleLike?.let { onLike ->
                 IconButton(onClick = { onLike(song) }, modifier = Modifier.size(34.dp)) {
                     Icon(
-                        if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
+                        if (liked) ChordWaveIcons.HeartFilled else ChordWaveIcons.Heart,
                         "Favorite",
                         tint = if (liked) DesktopAccent else DesktopSecondary,
                         modifier = Modifier.size(18.dp),
@@ -7842,7 +7838,7 @@ private fun DesktopCollectionSongRow(
                         CircularProgressIndicator(Modifier.size(16.dp), color = DesktopAccent, strokeWidth = 2.dp)
                     } else {
                         Icon(
-                            if (downloaded) BitChordIcons.Download else BitChordIcons.Download,
+                            if (downloaded) ChordWaveIcons.Download else ChordWaveIcons.Download,
                             if (downloaded) "Downloaded" else "Download",
                             tint = if (downloaded) DesktopAccent else DesktopSecondary,
                             modifier = Modifier.size(18.dp),
@@ -7852,7 +7848,7 @@ private fun DesktopCollectionSongRow(
             }
             onAddToPlaylist?.let { onAdd ->
                 IconButton(onClick = { onAdd(song) }, modifier = Modifier.size(34.dp)) {
-                    Icon(BitChordIcons.Plus, DesktopStrings["add_to_playlist", "Add to playlist"], tint = DesktopSecondary, modifier = Modifier.size(18.dp))
+                    Icon(ChordWaveIcons.Plus, DesktopStrings["add_to_playlist", "Add to playlist"], tint = DesktopSecondary, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -8140,7 +8136,7 @@ internal object DesktopShelfRowChrome : ShelfRowChrome {
             )
             DesktopShelfArrow(
                 alignment = Alignment.CenterEnd,
-                icon = BitChordIcons.ChevronRight,
+                icon = ChordWaveIcons.ChevronRight,
                 description = DesktopStrings["d_scroll_right", "Scroll right"],
                 visible = hovered && state.canScrollForward,
                 onClick = { page(forward = true) },
@@ -8272,7 +8268,7 @@ private fun DesktopSongRow(
             )
         }
         if (onToggleLike != null) {
-            IconButton(onClick = { onToggleLike(song) }) { Icon(if (liked) BitChordIcons.HeartFilled else BitChordIcons.Heart, "Favorite", tint = if (liked) DesktopAccent else DesktopSecondary) }
+            IconButton(onClick = { onToggleLike(song) }) { Icon(if (liked) ChordWaveIcons.HeartFilled else ChordWaveIcons.Heart, "Favorite", tint = if (liked) DesktopAccent else DesktopSecondary) }
         }
         if (onDownload != null) {
             if (downloadInProgress) {
@@ -8286,7 +8282,7 @@ private fun DesktopSongRow(
             } else {
                 IconButton(onClick = { if (!downloaded) onDownload(song) }) {
                     Icon(
-                        imageVector = if (downloaded) BitChordIcons.Download else BitChordIcons.Download,
+                        imageVector = if (downloaded) ChordWaveIcons.Download else ChordWaveIcons.Download,
                         contentDescription = if (downloaded) "Downloaded" else "Download",
                         tint = if (downloaded) DesktopAccent else DesktopSecondary,
                     )
@@ -8295,7 +8291,7 @@ private fun DesktopSongRow(
         }
         if (onAddToPlaylist != null) {
             IconButton(onClick = { onAddToPlaylist(song) }) {
-                Icon(BitChordIcons.Plus, DesktopStrings["add_to_playlist", "Add to playlist"], tint = DesktopSecondary)
+                Icon(ChordWaveIcons.Plus, DesktopStrings["add_to_playlist", "Add to playlist"], tint = DesktopSecondary)
             }
         }
         // The same menu every other surface opens, so a row on a list page offers what a row on
@@ -8460,7 +8456,7 @@ private fun SettingsNavigationRow(title: String, subtitle: String, onClick: () -
         }
         Spacer(Modifier.width(10.dp))
         Icon(
-            BitChordIcons.ChevronRight,
+            ChordWaveIcons.ChevronRight,
             null,
             tint = DesktopSecondary,
             modifier = Modifier.size(18.dp),
@@ -8551,7 +8547,7 @@ private fun SettingsRow(
         }
         if (onClick != null) {
             Spacer(Modifier.width(10.dp))
-            Icon(BitChordIcons.ChevronRight, null, tint = DesktopSecondary, modifier = Modifier.size(18.dp))
+            Icon(ChordWaveIcons.ChevronRight, null, tint = DesktopSecondary, modifier = Modifier.size(18.dp))
         }
     }
 }

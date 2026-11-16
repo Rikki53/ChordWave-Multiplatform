@@ -294,7 +294,7 @@ import com.music.bitchord.ui.components.ServerEditorHost
 import com.music.bitchord.ui.components.UpdateAvailableDialog
 import com.music.bitchord.ui.components.WebDavConflictAlert
 import com.music.bitchord.ui.components.FieldConfig
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import androidx.media3.common.Player
 import com.music.bitchord.data.YtMusicRepository
 import com.music.bitchord.data.TopPicks
@@ -358,7 +358,7 @@ import com.music.bitchord.ui.replay.ReplayShareSheet
 import com.music.bitchord.ui.replay.ReplayStories
 import com.music.bitchord.ui.replay.ReplayStoryPage
 import com.music.bitchord.ui.replay.rememberReplayState
-import com.music.bitchord.ui.theme.BitChordTheme
+import com.music.bitchord.ui.theme.ChordWaveTheme
 import com.music.bitchord.ui.theme.rememberArtworkPalette
 import com.music.bitchord.data.canvas.AppleArtistArtRepository
 import com.music.bitchord.data.canvas.keyColors
@@ -395,7 +395,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         // Before the composition, so a cold launch from a widget's artwork has
-        // the request already standing by the time BitChordApp first reads it.
+        // the request already standing by the time ChordWaveApp first reads it.
         PlayerDeepLink.consume(intent)
         JamInviteLink.consume(intent)
         // Likewise for a link tapped or shared from another app — see [MusicLink].
@@ -416,9 +416,9 @@ class MainActivity : AppCompatActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            BitChordTheme(darkTheme = darkTheme, font = appFont) {
+            ChordWaveTheme(darkTheme = darkTheme, font = appFont) {
                 // The glass surfaces sample this layer, and a layer records only
-                // what is drawn into it — which, for BitChord, is a page that
+                // what is drawn into it — which, for ChordWave, is a page that
                 // paints no background of its own. Everywhere a page is not
                 // showing artwork the recording is transparent, so the glass had
                 // nothing to blur there and you saw straight through it to the
@@ -451,7 +451,7 @@ class MainActivity : AppCompatActivity() {
                 // A measured constraint cannot be stale — it is the very width
                 // the split is about to be laid out in.
                 BoxWithConstraints(Modifier.fillMaxSize()) {
-                    BitChordApp(
+                    ChordWaveApp(
                         darkTheme = darkTheme,
                         windowWidth = maxWidth,
                         windowHeight = maxHeight,
@@ -512,7 +512,7 @@ class MainActivity : AppCompatActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BitChordApp(
+private fun ChordWaveApp(
     darkTheme: Boolean,
     /** The width of the window this is laid out in — see the call site. */
     windowWidth: Dp,
@@ -1346,10 +1346,10 @@ private fun BitChordApp(
     val openedFileLabel = stringResource(R.string.opened_file)
     val tabs = remember(homeLabel, exploreLabel, libraryLabel, searchLabel) {
         listOf(
-            BottomTab(homeLabel, BitChordIcons.Home),
-            BottomTab(exploreLabel, BitChordIcons.TabExplore),
-            BottomTab(libraryLabel, BitChordIcons.TabLibrary),
-            BottomTab(searchLabel, BitChordIcons.TabSearch),
+            BottomTab(homeLabel, ChordWaveIcons.Home),
+            BottomTab(exploreLabel, ChordWaveIcons.TabExplore),
+            BottomTab(libraryLabel, ChordWaveIcons.TabLibrary),
+            BottomTab(searchLabel, ChordWaveIcons.TabSearch),
         )
     }
 
@@ -1987,7 +1987,7 @@ private fun BitChordApp(
 
     /**
      * A YouTube Music link tapped elsewhere on the device, a link shared into
-     * BitChord, or "play something" said to the assistant — see [MusicLink].
+     * ChordWave, or "play something" said to the assistant — see [MusicLink].
      *
      * Keyed on the controller as well as the request, because a link is as
      * often as not what cold-starts the app: the session it has to play into is
@@ -4018,7 +4018,7 @@ private fun BitChordApp(
                                 if (releaseSongs.isNotEmpty()) {
                                     IconButton(onClick = { detailSearching = !detailSearching }) {
                                         Icon(
-                                            if (detailSearching) Icons.Rounded.Close else BitChordIcons.Search,
+                                            if (detailSearching) Icons.Rounded.Close else ChordWaveIcons.Search,
                                             contentDescription = stringResource(
                                                 if (detailSearching) R.string.close_search else R.string.search_this_list,
                                             ),
@@ -6064,7 +6064,7 @@ private fun FrostedFolderMenu(
             label = stringResource(if (grid) R.string.switch_to_list_view else R.string.switch_to_grid_view),
             checked = false,
             onClick = onToggleViewType,
-            icon = if (grid) BitChordIcons.ListView else BitChordIcons.GridView,
+            icon = if (grid) ChordWaveIcons.ListView else ChordWaveIcons.GridView,
         )
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 4.dp),

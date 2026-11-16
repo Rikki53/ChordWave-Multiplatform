@@ -136,7 +136,7 @@ import com.music.bitchord.data.lyrics.translationLanguageName
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.Haptics
 import com.music.bitchord.ui.haptics.rememberHaptics
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import com.music.bitchord.ui.rememberIsForeground
 import java.util.Locale
 import kotlin.math.PI
@@ -2815,7 +2815,7 @@ private fun CurrentLyricLine(
                 .padding(vertical = 4.dp),
         ) {
             Icon(
-                imageVector = BitChordIcons.MusicNote,
+                imageVector = ChordWaveIcons.MusicNote,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(16.dp),
@@ -2831,7 +2831,7 @@ private fun CurrentLyricLine(
             )
             Spacer(Modifier.width(6.dp))
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = ChordWaveIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(14.dp),
@@ -2888,7 +2888,7 @@ private fun CurrentLyricLine(
     ) {
         if (instrumental) {
             Icon(
-                imageVector = BitChordIcons.MusicNote,
+                imageVector = ChordWaveIcons.MusicNote,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(16.dp),
@@ -2950,7 +2950,7 @@ private fun CurrentLyricLine(
             Spacer(Modifier.width(6.dp))
             // Disclosure hint: this strip opens the full lyrics screen.
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = ChordWaveIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(14.dp),
@@ -2958,7 +2958,7 @@ private fun CurrentLyricLine(
         } else {
             Spacer(Modifier.width(6.dp))
             Icon(
-                imageVector = BitChordIcons.ChevronRight,
+                imageVector = ChordWaveIcons.ChevronRight,
                 contentDescription = null,
                 tint = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier

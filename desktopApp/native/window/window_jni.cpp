@@ -37,7 +37,7 @@ bool g_fullscreen_active = false;
 RECT g_fullscreen_target{};
 
 // Posted from Java to start a caption drag on the thread that owns the window; see frame_proc.
-constexpr UINT WM_BITCHORD_DRAG = WM_APP + 0x42;
+constexpr UINT WM_CHORDWAVE_DRAG = WM_APP + 0x42;
 // SC_MOVE through the caption: the same move loop a real title bar starts.
 constexpr WPARAM SC_DRAGMOVE = SC_MOVE | HTCAPTION;
 
@@ -129,7 +129,7 @@ LRESULT CALLBACK frame_proc(HWND window, UINT message, WPARAM wparam, LPARAM lpa
         if (bottom) return HTBOTTOM;
     }
 
-    if (message == WM_BITCHORD_DRAG) {
+    if (message == WM_CHORDWAVE_DRAG) {
         // Windows moves the window itself from here, as it does for a system caption: DWM slides
         // the composed surface, so nothing is exposed to be filled with the class brush (the white
         // band an AWT setLocation per mouse event left along the edges), and Aero Snap and
@@ -814,7 +814,7 @@ JNIEXPORT jboolean JNICALL
 Java_com_music_bitchord_desktop_DesktopWindowsFrame_nativeStartDrag(JNIEnv*, jclass) {
     HWND window = g_window;
     return window != nullptr && IsWindow(window) &&
-        PostMessageW(window, WM_BITCHORD_DRAG, 0, 0) != 0
+        PostMessageW(window, WM_CHORDWAVE_DRAG, 0, 0) != 0
         ? JNI_TRUE : JNI_FALSE;
 }
 

@@ -13,10 +13,10 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/KabirSinghBhatia/BitChord/backend/clock"
-	"github.com/KabirSinghBhatia/BitChord/backend/config"
-	"github.com/KabirSinghBhatia/BitChord/backend/presence"
-	"github.com/KabirSinghBhatia/BitChord/backend/protocol"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/clock"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/config"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/presence"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/protocol"
 )
 
 func setupTestServer() *httptest.Server {

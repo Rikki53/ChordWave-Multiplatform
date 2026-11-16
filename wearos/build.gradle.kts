@@ -7,7 +7,7 @@ plugins {
 }
 
 /*
- * BitChord for Wear OS: a remote for the phone app, not a second player.
+ * ChordWave for Wear OS: a remote for the phone app, not a second player.
  *
  * It holds no library, streams nothing and runs no Palette or blur of its own —
  * the phone sends it what is playing, the cover as a 240px JPEG, and the mesh
@@ -16,7 +16,7 @@ plugins {
  *
  * It has to share the phone app's application id *and* signing key, because the
  * Wearable Data Layer only delivers between apps that match on both. So:
- *   dev  -> com.dev.bitchord   pairs only with the phone's dev build
+ *   dev  -> com.dev.chordwave   pairs only with the phone's dev build
  *   prod -> com.music.bitchord pairs only with the phone's prod build
  * and each build type is signed exactly the way the phone's is (debug key for
  * debug, the release keystore for release), so a watch build pairs with the
@@ -28,7 +28,7 @@ val signing = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
-val betaSuffix = rootProject.extra["bitchordBetaSuffix"] as String
+val betaSuffix = rootProject.extra["chordwaveBetaSuffix"] as String
 
 android {
     namespace = "com.music.bitchord.wear"
@@ -40,8 +40,8 @@ android {
         minSdk = 30
         targetSdk = 36
         // The phone's version — see the root build.gradle.kts.
-        versionCode = rootProject.extra["bitchordVersionCode"] as Int
-        versionName = rootProject.extra["bitchordVersionName"] as String
+        versionCode = rootProject.extra["chordwaveVersionCode"] as Int
+        versionName = rootProject.extra["chordwaveVersionName"] as String
     }
 
     sourceSets {
@@ -53,12 +53,12 @@ android {
     productFlavors {
         create("dev") {
             dimension = "env"
-            applicationId = "com.dev.bitchord"
-            resValue("string", "app_name", "BitChord Dev")
+            applicationId = "com.dev.chordwave"
+            resValue("string", "app_name", "ChordWave Dev")
         }
         create("prod") {
             dimension = "env"
-            resValue("string", "app_name", "BitChord")
+            resValue("string", "app_name", "ChordWave")
         }
     }
 
@@ -81,11 +81,11 @@ android {
          * signs with the debug key — that is the part pairing depends on — but a
          * debuggable, un-R8'd Compose app is the slow kind, and on a watch CPU
          * that is the difference between a smooth crown and a stuttering one.
-         * Pass -Pbitchord.wearDebuggable=true to get a debugger back.
+         * Pass -Pchordwave.wearDebuggable=true to get a debugger back.
          */
         debug {
             if (betaSuffix.isNotEmpty()) versionNameSuffix = "-$betaSuffix"
-            val debuggable = providers.gradleProperty("bitchord.wearDebuggable").orNull == "true"
+            val debuggable = providers.gradleProperty("chordwave.wearDebuggable").orNull == "true"
             isDebuggable = debuggable
             isMinifyEnabled = !debuggable
             isShrinkResources = !debuggable
@@ -136,10 +136,10 @@ kotlin {
     }
 }
 
-// Named after the phone APKs (BitChord-v1.8.apk) but with their own prefix, so
-// the phone's updater — which only takes assets starting "BitChord-" — can never
+// Named after the phone APKs (ChordWave-v1.8.apk) but with their own prefix, so
+// the phone's updater — which only takes assets starting "ChordWave-" — can never
 // pick a watch APK by mistake.
-base.archivesName.set("BitChordWear")
+base.archivesName.set("ChordWaveWear")
 
 dependencies {
     implementation("androidx.wear.compose:compose-material3:1.6.2")

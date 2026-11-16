@@ -7,6 +7,10 @@ on:
       version:
         description: "Version to stamp into the packages, without the leading v"
         required: true
+      ios_ipa_url:
+        description: "Optional direct URL of a prebuilt unsigned iOS .ipa to attach to the release (the iOS app is built outside this repo — no iOS source lives here)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -54,32 +58,32 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Tests
-        run: ./gradlew :shared:jvmTest :desktopUi:jvmTest :desktopApp:test -Pbitchord.version=${{ steps.version.outputs.value }}
+        run: ./gradlew :shared:jvmTest :desktopUi:jvmTest :desktopApp:test -Pchordwave.version=${{ steps.version.outputs.value }}
 
       - name: Build deb, rpm and the app image
         run: |
           ./gradlew :desktopApp:packageDeb :desktopApp:packageRpm :desktopApp:createDistributable \
-            -Pbitchord.version=${{ steps.version.outputs.value }}
+            -Pchordwave.version=${{ steps.version.outputs.value }}
 
       - name: The analyser and models are in the jar
         run: |
-          jar=$(ls desktopApp/build/compose/binaries/main/app/BitChord/lib/app/desktopApp*.jar)
+          jar=$(ls desktopApp/build/compose/binaries/main/app/ChordWave/lib/app/desktopApp*.jar)
           jar tf "$jar" | grep -q 'native/libbitchord_analysis.so'
           jar tf "$jar" | grep -q 'models/.*\.onnx'
 
       - name: Build the AppImage
         run: |
           desktopApp/packaging/appimage.sh \
-            desktopApp/build/compose/binaries/main/app/BitChord \
-            dist/BitChord-${{ steps.version.outputs.value }}-linux-x86_64.AppImage \
+            desktopApp/build/compose/binaries/main/app/ChordWave \
+            dist/ChordWave-${{ steps.version.outputs.value }}-linux-x86_64.AppImage \
             "$PWD/appimagetool.AppImage"
 
       - name: Collect
         run: |
           v=${{ steps.version.outputs.value }}
           mkdir -p dist
-          cp desktopApp/build/compose/binaries/main/deb/*.deb "dist/BitChord-$v-linux-amd64.deb"
-          cp desktopApp/build/compose/binaries/main/rpm/*.rpm "dist/BitChord-$v-linux-x86_64.rpm"
+          cp desktopApp/build/compose/binaries/main/deb/*.deb "dist/ChordWave-$v-linux-amd64.deb"
+          cp desktopApp/build/compose/binaries/main/rpm/*.rpm "dist/ChordWave-$v-linux-x86_64.rpm"
           ls -lh dist
 
       - uses: actions/upload-artifact@v4
@@ -128,16 +132,16 @@ jobs:
           echo "LASTFM_SECRET=${{ secrets.LASTFM_SECRET }}" >> local.properties
 
       - name: Tests
-        run: .\gradlew.bat :shared:jvmTest :desktopUi:jvmTest :desktopApp:test "-Pbitchord.version=${{ steps.version.outputs.value }}"
+        run: .\gradlew.bat :shared:jvmTest :desktopUi:jvmTest :desktopApp:test "-Pchordwave.version=${{ steps.version.outputs.value }}"
 
       - name: Build msi, exe and the app image
         run: |
-          .\gradlew.bat :desktopApp:packageMsi :desktopApp:packageExe :desktopApp:createDistributable "-Pbitchord.version=${{ steps.version.outputs.value }}"
+          .\gradlew.bat :desktopApp:packageMsi :desktopApp:packageExe :desktopApp:createDistributable "-Pchordwave.version=${{ steps.version.outputs.value }}"
 
       - name: The analyser and models are in the jar
         shell: bash
         run: |
-          jar=$(ls desktopApp/build/compose/binaries/main/app/BitChord/app/desktopApp*.jar)
+          jar=$(ls desktopApp/build/compose/binaries/main/app/ChordWave/app/desktopApp*.jar)
           jar tf "$jar" | grep -q 'native/bitchord_analysis.dll'
           jar tf "$jar" | grep -q 'models/.*\.onnx'
           # WinRT, so only MSVC can build it and only this job ever does.
@@ -148,10 +152,10 @@ jobs:
         run: |
           $v = "${{ steps.version.outputs.value }}"
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item desktopApp/build/compose/binaries/main/msi/*.msi "dist/BitChord-$v-windows-x64.msi"
-          Copy-Item desktopApp/build/compose/binaries/main/exe/*.exe "dist/BitChord-$v-windows-x64-setup.exe"
-          7z a -tzip -mx=5 "dist/BitChord-$v-windows-x64-portable.zip" `
-            "desktopApp/build/compose/binaries/main/app/BitChord/*" | Out-Null
+          Copy-Item desktopApp/build/compose/binaries/main/msi/*.msi "dist/ChordWave-$v-windows-x64.msi"
+          Copy-Item desktopApp/build/compose/binaries/main/exe/*.exe "dist/ChordWave-$v-windows-x64-setup.exe"
+          7z a -tzip -mx=5 "dist/ChordWave-$v-windows-x64-portable.zip" `
+            "desktopApp/build/compose/binaries/main/app/ChordWave/*" | Out-Null
           Get-ChildItem dist | Format-Table Name, Length
 
       - uses: actions/upload-artifact@v4
@@ -164,8 +168,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-14
+          # macos-14 was retired 2 Nov 2026; macos-15 is the current arm64 image.
+          - os: macos-15
             arch: arm64
+          # macos-15-intel is GitHub's last x86_64 macOS runner, supported
+          # through ~August 2027. After that, Intel builds need a self-hosted
+          # Intel Mac (or a cross-built universal app — see REBRAND notes).
           - os: macos-15-intel
             arch: x64
     runs-on: ${{ matrix.os }}
@@ -196,16 +204,16 @@ jobs:
       - run: chmod +x gradlew
 
       - name: Tests
-        run: ./gradlew :shared:jvmTest :desktopUi:jvmTest :desktopApp:test -Pbitchord.version=${{ steps.version.outputs.value }}
+        run: ./gradlew :shared:jvmTest :desktopUi:jvmTest :desktopApp:test -Pchordwave.version=${{ steps.version.outputs.value }}
 
       - name: Build DMG, PKG and the app bundle
         run: |
           ./gradlew :desktopApp:packageDmg :desktopApp:packagePkg :desktopApp:createDistributable \
-            -Pbitchord.version=${{ steps.version.outputs.value }}
+            -Pchordwave.version=${{ steps.version.outputs.value }}
 
       - name: The analyser and models are in the jar
         run: |
-          jar=$(ls desktopApp/build/compose/binaries/main/app/BitChord.app/Contents/app/desktopApp*.jar)
+          jar=$(ls desktopApp/build/compose/binaries/main/app/ChordWave.app/Contents/app/desktopApp*.jar)
           jar tf "$jar" | grep -q 'models/.*\.onnx'
 
       - name: Collect
@@ -214,12 +222,12 @@ jobs:
           arch="${{ matrix.arch }}"
           mkdir -p dist
           for f in desktopApp/build/compose/binaries/main/dmg/*.dmg; do
-            [ -f "$f" ] && cp "$f" "dist/BitChord-$v-macos-$arch.dmg"
+            [ -f "$f" ] && cp "$f" "dist/ChordWave-$v-macos-$arch.dmg"
           done
           for f in desktopApp/build/compose/binaries/main/pkg/*.pkg; do
-            [ -f "$f" ] && cp "$f" "dist/BitChord-$v-macos-$arch.pkg"
+            [ -f "$f" ] && cp "$f" "dist/ChordWave-$v-macos-$arch.pkg"
           done
-          ditto -c -k --keepParent desktopApp/build/compose/binaries/main/app/BitChord.app "dist/BitChord-$v-macos-$arch.zip"
+          ditto -c -k --keepParent desktopApp/build/compose/binaries/main/app/ChordWave.app "dist/ChordWave-$v-macos-$arch.zip"
           ls -lh dist
 
       - uses: actions/upload-artifact@v4
@@ -227,11 +235,55 @@ jobs:
           name: macos-${{ matrix.arch }}-artifacts
           path: dist/*
 
-  release:
-    name: Publish
-    needs: [linux, windows, macos]
+  ios:
+    name: iOS · attach prebuilt unsigned IPA
+    # The iOS app has no build in this repo (no iOS source or Xcode project
+    # lives here — it was built outside it). This job only fetches a prebuilt
+    # .ipa from a URL the release run is given, verifies it is a real IPA, and
+    # attaches it to the same unified release. Without a URL the job skips and
+    # the release simply ships without an iOS asset; the draft can still have
+    # one attached by hand before publishing.
+    if: ${{ inputs.ios_ipa_url != '' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Work out the version
+        id: version
+        run: |
+          version="${{ inputs.version }}"
+          [ -n "$version" ] || version="${GITHUB_REF_NAME#v}"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Download and verify the IPA
+        run: |
+          mkdir -p dist
+          curl -fsSL -o "dist/ChordWave-${{ steps.version.outputs.value }}-ios-unsigned.ipa" \
+            "${{ inputs.ios_ipa_url }}"
+          file "dist/ChordWave-${{ steps.version.outputs.value }}-ios-unsigned.ipa"
+          unzip -l "dist/ChordWave-${{ steps.version.outputs.value }}-ios-unsigned.ipa" \
+            | grep -qE 'Payload/[^/]+\.app/Info\.plist' \
+            || { echo "not a valid IPA: no Payload/*.app/Info.plist inside" >&2; exit 1; }
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-artifacts
+          path: dist/*
+
+  release:
+    name: Publish
+    needs: [linux, windows, macos, ios]
+    # The iOS job legitimately skips when no IPA URL was given; the three
+    # desktop platforms must all have succeeded.
+    if: ${{ always() && needs.linux.result == 'success' && needs.windows.result == 'success' && needs.macos.result == 'success' && (needs.ios.result == 'success' || needs.ios.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Work out the version
+        id: version
+        run: |
+          version="${{ inputs.version }}"
+          [ -n "$version" ] || version="${GITHUB_REF_NAME#v}"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
       - uses: actions/download-artifact@v4
         with:
           pattern: "*-artifacts"
@@ -245,8 +297,20 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: BitChord ${{ github.ref_name }}
+          name: ChordWave ${{ github.ref_name }}
           draft: true
+          body: |
+            ChordWave ${{ github.ref_name }} — one release for every platform.
+
+            | Platform | File |
+            |---|---|
+            | Windows | `ChordWave-${{ steps.version.outputs.value }}-windows-x64-setup.exe` (installer), `-windows-x64-portable.zip`, `-windows-x64.msi` |
+            | macOS Apple Silicon | `ChordWave-${{ steps.version.outputs.value }}-macos-arm64.dmg` |
+            | macOS Intel | `ChordWave-${{ steps.version.outputs.value }}-macos-x64.dmg` |
+            | Linux | `ChordWave-${{ steps.version.outputs.value }}-linux-x86_64.AppImage`, `-linux-amd64.deb`, `-linux-x86_64.rpm` |
+            | iOS | `ChordWave-${{ steps.version.outputs.value }}-ios-unsigned.ipa` (sideload; attached when an IPA was supplied for this release) |
+
+            The in-app update check only sees published releases: publish this draft to notify existing installs.
           files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

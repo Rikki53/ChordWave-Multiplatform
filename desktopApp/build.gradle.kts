@@ -4,21 +4,21 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /** What the packages, the launcher and the settings footer all say. */
-val appVersion: String = providers.gradleProperty("bitchord.version").orNull
+val appVersion: String = providers.gradleProperty("chordwave.version").orNull
     ?.removePrefix("v")
     ?.takeIf { it.isNotBlank() }
-    ?: (rootProject.extra["bitchordVersionName"] as? String)
-    ?: "1.9.1"
+    ?: (rootProject.extra["chordwaveVersionName"] as? String)
+    ?: "2.2.0"
 
 /** Which platform this build is *for*, which is the host unless told otherwise. */
 val hostIsWindows = System.getProperty("os.name").contains("Windows", ignoreCase = true)
 val hostIsLinux = System.getProperty("os.name").contains("Linux", ignoreCase = true)
 val hostIsMac = System.getProperty("os.name").contains("Mac", ignoreCase = true)
-val targetOs: String = (providers.gradleProperty("bitchord.target").orNull ?: when {
+val targetOs: String = (providers.gradleProperty("chordwave.target").orNull ?: when {
     hostIsWindows -> "windows"
     hostIsLinux -> "linux"
     hostIsMac -> "macos"
-    else -> error("BitChord desktop supports Linux, Windows, and macOS only")
+    else -> error("ChordWave desktop supports Linux, Windows, and macOS only")
 }).lowercase()
 
 val hostArch = System.getProperty("os.arch").lowercase()
@@ -41,7 +41,7 @@ val nativeClassifier = when (targetOs) {
     "windows" -> "windows-x86_64"
     "linux" -> "linux-x86_64"
     "macos" -> if (isArm64) "macosx-arm64" else "macosx-x86_64"
-    else -> error("BitChord desktop supports Linux, Windows, and macOS only")
+    else -> error("ChordWave desktop supports Linux, Windows, and macOS only")
 }
 private fun localProperty(name: String): String = rootProject.file("local.properties")
     .takeIf { it.isFile }
@@ -89,8 +89,10 @@ dependencies {
     // The shared player loads artwork through Coil, as the phone does.
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 
-    // Automix runs the same two models the Android build does.
-    implementation("com.microsoft.onnxruntime:onnxruntime:1.29.0")
+    // Automix runs the same two models the Android build does. ONNX Runtime 1.29.0 no longer
+    // bundles its native macOS x86_64 library, so Intel Macs keep the last runtime with that slice.
+    val onnxRuntimeVersion = if (targetOs == "macos" && !isArm64) "1.20.0" else "1.29.0"
+    implementation("com.microsoft.onnxruntime:onnxruntime:$onnxRuntimeVersion")
 
     // Decoding, resampling and demuxing for the audio engine.
     implementation("org.bytedeco:javacpp:$javacppVersion")
@@ -394,7 +396,7 @@ val windowsPortableAssemble by tasks.registering {
     group = "distribution"
     description = "Lays out a Windows-runnable folder: application jars, Windows natives, launcher."
     dependsOn(tasks.named("jar"))
-    val stage = windowsPortableDir.map { it.dir("BitChord") }
+    val stage = windowsPortableDir.map { it.dir("ChordWave") }
     val appJar = tasks.named<Jar>("jar").flatMap { it.archiveFile }
     val runtime = configurations.named("runtimeClasspath")
     val version = appVersion
@@ -423,22 +425,22 @@ val windowsPortableAssemble by tasks.registering {
             val name = if (group.isNullOrBlank()) artifact.file.name else "$group.${artifact.file.name}"
             artifact.file.copyTo(File(lib, name), overwrite = true)
         }
-        appJar.get().asFile.copyTo(File(lib, "bitchord-app.jar"), overwrite = true)
+        appJar.get().asFile.copyTo(File(lib, "chordwave-app.jar"), overwrite = true)
 
         // `lib\*` rather than a spelled-out classpath: the wildcard is what keeps this working when
         // a dependency is added, and the JVM is what expands it.
-        File(target, "BitChord.bat").writeText(
+        File(target, "ChordWave.bat").writeText(
             buildString {
                 appendLine("@echo off")
                 appendLine("setlocal")
-                appendLine("rem BitChord, portable. Needs a Java 21+ runtime on PATH or in JAVA_HOME.")
+                appendLine("rem ChordWave, portable. Needs a Java 21+ runtime on PATH or in JAVA_HOME.")
                 appendLine("set \"HERE=%~dp0\"")
                 appendLine("set \"RUNNER=java\"")
                 appendLine("if defined JAVA_HOME set \"RUNNER=%JAVA_HOME%\\bin\\java\"")
-                append("\"%RUNNER%\" -Dbitchord.version=$version")
-                if (moduleIndex.isNotBlank()) append(" -Dbitchord.module.index=$moduleIndex")
+                append("\"%RUNNER%\" -Dchordwave.version=$version")
+                if (moduleIndex.isNotBlank()) append(" -Dchordwave.module.index=$moduleIndex")
                 if (lastfmKey.isNotBlank() && lastfmSharedSecret.isNotBlank()) {
-                    append(" -Dbitchord.lastfm.key=$lastfmKey -Dbitchord.lastfm.secret=$lastfmSharedSecret")
+                    append(" -Dchordwave.lastfm.key=$lastfmKey -Dchordwave.lastfm.secret=$lastfmSharedSecret")
                 }
                 appendLine(" -cp \"%HERE%lib\\*\" $mainClass %*")
                 appendLine("endlocal")
@@ -453,7 +455,7 @@ val windowsPortableAssemble by tasks.registering {
         }
         val problems = buildList {
             if (!holds("com/music/bitchord/desktop/MainKt.class")) {
-                add("the BitChord desktop entry point is missing")
+                add("the ChordWave desktop entry point is missing")
             }
             if (!holds("androidx/compose/runtime/Composer.class")) {
                 add("the Compose runtime is missing")
@@ -489,7 +491,7 @@ val windowsPortable by tasks.registering(Zip::class) {
     description = "Zips the portable Windows folder for copying to a Windows machine."
     dependsOn(windowsPortableAssemble)
     from(windowsPortableDir)
-    archiveFileName.set("BitChord-$appVersion-windows-portable.zip")
+    archiveFileName.set("ChordWave-$appVersion-windows-portable.zip")
     destinationDirectory.set(layout.buildDirectory.dir("distributions"))
     doLast { logger.lifecycle("windowsPortable: ${archiveFile.get().asFile.absolutePath}") }
 }
@@ -504,15 +506,15 @@ compose.desktop {
         mainClass = composeMainClass
         jvmArgs("-Xmx512m")
         jvmArgs("-XX:+UseG1GC", "-XX:G1PeriodicGCInterval=20000", "-XX:G1PeriodicGCSystemLoadThreshold=0")
-        jvmArgs("-Dbitchord.version=$appVersion")
+        jvmArgs("-Dchordwave.version=$appVersion")
         if (desktopModuleIndexUrl.isNotBlank()) {
-            jvmArgs("-Dbitchord.module.index=$desktopModuleIndexUrl")
+            jvmArgs("-Dchordwave.module.index=$desktopModuleIndexUrl")
         }
         if (lastfmApiKey.isNotBlank() && lastfmSecret.isNotBlank()) {
-            jvmArgs("-Dbitchord.lastfm.key=$lastfmApiKey", "-Dbitchord.lastfm.secret=$lastfmSecret")
+            jvmArgs("-Dchordwave.lastfm.key=$lastfmApiKey", "-Dchordwave.lastfm.secret=$lastfmSecret")
         }
         if (listenTogetherServer.isNotBlank()) {
-            jvmArgs("-Dbitchord.listentogether.server=$listenTogetherServer")
+            jvmArgs("-Dchordwave.listentogether.server=$listenTogetherServer")
         }
 
         buildTypes.release.proguard {
@@ -531,11 +533,11 @@ compose.desktop {
                 TargetFormat.Deb,
                 TargetFormat.Rpm,
             )
-            packageName = "BitChord"
+            packageName = "ChordWave"
             packageVersion = nativePackageVersion
-            description = if (targetOs == "windows") "BitChord" else "Aesthetic YouTube Music client"
-            vendor = "BitChord contributors"
-            copyright = "Copyright © 2026 BitChord contributors"
+            description = if (targetOs == "windows") "ChordWave" else "Aesthetic YouTube Music client"
+            vendor = "ChordWave contributors"
+            copyright = "Copyright © 2026 ChordWave contributors"
 
             modules(
                 "java.base",
@@ -563,9 +565,9 @@ compose.desktop {
 
             macOS {
                 iconFile.set(project.file("packaging/icons/AppIcon.icns"))
-                bundleID = "com.music.bitchord"
+                bundleID = "com.riki.chordwave"
                 appCategory = "public.app-category.music"
-                dockName = "BitChord"
+                dockName = "ChordWave"
                 infoPlist {
                     extraKeysRawXml = """
                         <key>NSRequiresAquaSystemAppearance</key>
@@ -578,14 +580,14 @@ compose.desktop {
                 iconFile.set(project.file("packaging/icons/AppIcon.png"))
                 menuGroup = "Audio"
                 appCategory = "AudioVideo;Audio;Player"
-                debMaintainer = "85984486+AbhiTheModder@users.noreply.github.com"
+                debMaintainer = "135516251+Rikki53@users.noreply.github.com"
                 rpmLicenseType = "GPL-3.0"
             }
 
             windows {
                 iconFile.set(project.file("packaging/icons/AppIcon.ico"))
-                upgradeUuid = "8f3c1d24-6a2b-4f5e-9c17-2b8d54e0a913"
-                menuGroup = "BitChord"
+                upgradeUuid = "fb2934d1-c1c8-4300-bd5d-676e321d77b5"
+                menuGroup = "ChordWave"
                 shortcut = true
                 dirChooser = false
                 perUserInstall = true

@@ -5,7 +5,7 @@ import android.os.SystemClock
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.Network
-import com.music.bitchord.BitChordApplication
+import com.music.bitchord.ChordWaveApplication
 import com.music.bitchord.BuildConfig
 import com.music.bitchord.data.DebugLog as Log
 import com.music.bitchord.data.settings.AppSettings
@@ -1466,7 +1466,7 @@ object ListenTogether {
      * real account identifiers would be holding something it has no use for.
      */
     private fun identity(nickname: String = nickname()): Identity? {
-        val store = BitChordApplication.authStore
+        val store = ChordWaveApplication.authStore
         if (!store.isSignedIn) return null
         val account = store.activeSession ?: return null
         val profile = account.profiles.firstOrNull { it.profileId == account.activeProfileId }
@@ -1693,7 +1693,7 @@ object ListenTogether {
     const val CODE_LENGTH = 6
 
     private const val TAG = "ListenTogether"
-    private const val PREFS = "bitchord_listen_together"
+    private const val PREFS = "chordwave_listen_together"
     private const val KEY_SERVER = "server_url"
 
     /** What a redacted address reads as. Not a hostname, so it cannot be resolved back. */

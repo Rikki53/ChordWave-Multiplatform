@@ -82,8 +82,8 @@ android {
         // Haze falls back to a translucent scrim below that.
         minSdk = 26
         targetSdk = 36
-        versionCode = 39
-        versionName = "1.9.1"
+        versionCode = 40
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -99,10 +99,10 @@ android {
         // shared phone sources, so it gets no server.
         buildConfigField("String", "ADDON_AUTH_URL", "\"\"")
         // The TV APKs share a GitHub release with the phone ones and are told
-        // apart by name (BitChordTV-v1.8.apk, BitChordTV-v1.8_x86_64.apk), so
+        // apart by name (ChordWaveTV-v1.8.apk, ChordWaveTV-v1.8_x86_64.apk), so
         // the updater installs the TV app here, never the phone app. See
         // AppUpdateChecker.apkAssetUrl.
-        buildConfigField("String", "UPDATE_APK_PREFIX", "\"BitChordTV-\"")
+        buildConfigField("String", "UPDATE_APK_PREFIX", "\"ChordWaveTV-\"")
     }
 
     splits {
@@ -150,12 +150,12 @@ android {
     productFlavors {
         create("dev") {
             dimension = "env"
-            applicationId = "com.dev.bitchord.tv"
-            resValue("string", "app_name", "BitChord TV")
+            applicationId = "com.dev.chordwave.tv"
+            resValue("string", "app_name", "ChordWave TV")
         }
         create("prod") {
             dimension = "env"
-            resValue("string", "app_name", "BitChord TV")
+            resValue("string", "app_name", "ChordWave TV")
         }
     }
 
@@ -481,10 +481,10 @@ val verifyDevInstall = tasks.register("verifyDevInstall") {
             .drop(1)
             .mapNotNull { line -> line.split('\t').takeIf { it.size == 2 && it[1] == "device" }?.get(0) }
         serials.forEach { serial ->
-            logger.lifecycle("verifyDevInstall: compiling com.dev.bitchord on $serial")
+            logger.lifecycle("verifyDevInstall: compiling com.dev.chordwave on $serial")
             ProcessBuilder(
                 adbPath, "-s", serial, "shell", "cmd", "package", "compile",
-                "-m", "verify", "-f", "com.dev.bitchord",
+                "-m", "verify", "-f", "com.dev.chordwave",
             ).inheritIO().start().waitFor()
         }
     }

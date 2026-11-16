@@ -76,7 +76,7 @@ internal fun DesktopLastfmLoginDialog(onDismiss: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
-    // A release build signs in with BitChord's own app key, so only a build
+    // A release build signs in with ChordWave's own app key, so only a build
     // without one asks for the listener's — the two fields are not shown otherwise.
     val needsAppKey = !DesktopScrobbling.hasBuiltInLastFmKey
     val ready = username.isNotBlank() && password.isNotBlank() &&

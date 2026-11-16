@@ -122,7 +122,7 @@ data class SourceConfig(
  */
 object SourceRegistry {
 
-    private const val TAG = "BitChord"
+    private const val TAG = "ChordWave"
 
     private lateinit var prefs: SharedPreferences
 
@@ -142,7 +142,7 @@ object SourceRegistry {
 
     fun init(context: Context) {
         // Same repair and degradation as AuthStore; see EncryptedPrefs.
-        prefs = EncryptedPrefs.open(context, "bitchord_sources", "bitchord_sources_plain")
+        prefs = EncryptedPrefs.open(context, "chordwave_sources", "chordwave_sources_plain")
 
         val stored = prefs.getString(KEY_SOURCES, null)?.let(::decodeStored) ?: emptyList()
         val jioOptInMigrationDone = prefs.getBoolean(KEY_JIOSAAVN_OPT_IN_V1, false)
@@ -509,7 +509,7 @@ object SourceRegistry {
                     allowDownloads = detected.manifest.downloadsAllowed,
                     checkValidLossless = detected.manifest.requiresLosslessOutput,
                     qualityOptions = detected.manifest.qualityOptions,
-                    bitchordAuth = detected.manifest.requiresBitChordAuth,
+                    bitchordAuth = detected.manifest.requiresChordWaveAuth,
                     // The address may now name a different addon, whose list
                     // this pick was never on.
                     pickedQuality = existing?.pickedQuality?.takeIf { picked ->

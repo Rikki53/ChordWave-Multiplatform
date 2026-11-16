@@ -60,7 +60,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import com.music.bitchord.ui.player.ThinSlider
 
 /**
@@ -252,7 +252,7 @@ internal fun DesktopAppleMiniPlayer(
                     modifier = Modifier.size(32.dp),
                 ) {
                     Icon(
-                        imageVector = if (isLiked) BitChordIcons.HeartFilled else BitChordIcons.Heart,
+                        imageVector = if (isLiked) ChordWaveIcons.HeartFilled else ChordWaveIcons.Heart,
                         contentDescription = if (isLiked) "Unlike" else "Like",
                         tint = if (isLiked) DesktopAccent else Color.White.copy(alpha = 0.65f),
                         modifier = Modifier.size(18.dp),
@@ -353,7 +353,7 @@ internal fun DesktopAppleMiniPlayer(
                 active = shuffleActive,
             ) {
                 Icon(
-                    imageVector = BitChordIcons.Shuffle,
+                    imageVector = ChordWaveIcons.Shuffle,
                     contentDescription = null,
                     tint = if (shuffleActive) DesktopAccent else Color.White.copy(alpha = 0.55f),
                     modifier = Modifier.size(20.dp),
@@ -396,7 +396,7 @@ internal fun DesktopAppleMiniPlayer(
                 active = repeatActive,
             ) {
                 Icon(
-                    imageVector = BitChordIcons.Repeat,
+                    imageVector = ChordWaveIcons.Repeat,
                     contentDescription = null,
                     tint = if (repeatActive) DesktopAccent else Color.White.copy(alpha = 0.55f),
                     modifier = Modifier.size(20.dp),
@@ -423,7 +423,7 @@ internal fun DesktopAppleMiniPlayer(
                         .background(if (isLyricsActive) DesktopAccent.copy(alpha = 0.22f) else Color.Transparent),
                 ) {
                     Icon(
-                        imageVector = BitChordIcons.LyricsQuote,
+                        imageVector = ChordWaveIcons.LyricsQuote,
                         contentDescription = "Lyrics",
                         tint = if (isLyricsActive) DesktopAccent else Color.White.copy(alpha = 0.65f),
                         modifier = Modifier.size(16.dp),
@@ -442,7 +442,7 @@ internal fun DesktopAppleMiniPlayer(
                         .background(if (isQueueActive) DesktopAccent.copy(alpha = 0.22f) else Color.Transparent),
                 ) {
                     Icon(
-                        imageVector = BitChordIcons.Queue,
+                        imageVector = ChordWaveIcons.Queue,
                         contentDescription = "Queue",
                         tint = if (isQueueActive) DesktopAccent else Color.White.copy(alpha = 0.65f),
                         modifier = Modifier.size(16.dp),

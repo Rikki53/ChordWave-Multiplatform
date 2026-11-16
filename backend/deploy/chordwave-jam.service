@@ -1,11 +1,11 @@
 [Unit]
-Description=BitChord Listen Together server
+Description=ChordWave Listen Together server
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-User=bitchord
-ExecStart=/opt/bitchord-jam/server
+User=chordwave
+ExecStart=/opt/chordwave-jam/server
 Restart=always
 RestartSec=2
 

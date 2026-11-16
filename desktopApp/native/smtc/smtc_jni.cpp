@@ -47,8 +47,8 @@ std::mutex g_mutex;
 
 // Posted to the pump thread rather than acted on from the caller's: every
 // WinRT object here belongs to the apartment that created it.
-constexpr UINT WM_BITCHORD_UPDATE = WM_APP + 1;
-constexpr UINT WM_BITCHORD_QUIT = WM_APP + 2;
+constexpr UINT WM_CHORDWAVE_UPDATE = WM_APP + 1;
+constexpr UINT WM_CHORDWAVE_QUIT = WM_APP + 2;
 
 struct Update {
     std::wstring title;
@@ -148,13 +148,13 @@ void apply(const Update& update) {
 }
 
 LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
-    if (message == WM_BITCHORD_UPDATE) {
+    if (message == WM_CHORDWAVE_UPDATE) {
         auto* update = reinterpret_cast<Update*>(lparam);
         apply(*update);
         delete update;
         return 0;
     }
-    if (message == WM_BITCHORD_QUIT) {
+    if (message == WM_CHORDWAVE_QUIT) {
         PostQuitMessage(0);
         return 0;
     }
@@ -169,13 +169,13 @@ void pump() {
     description.cbSize = sizeof(description);
     description.lpfnWndProc = WindowProc;
     description.hInstance = GetModuleHandleW(nullptr);
-    description.lpszClassName = L"BitChordSmtcWindow";
+    description.lpszClassName = L"ChordWaveSmtcWindow";
     RegisterClassExW(&description);
 
     // Never shown. SMTC only needs a handle to hang itself off, and a visible
-    // window here would be a second BitChord in the taskbar.
+    // window here would be a second ChordWave in the taskbar.
     g_window = CreateWindowExW(
-        0, L"BitChordSmtcWindow", L"BitChord", WS_OVERLAPPED,
+        0, L"ChordWaveSmtcWindow", L"ChordWave", WS_OVERLAPPED,
         0, 0, 0, 0, nullptr, nullptr, description.hInstance, nullptr);
     if (g_window == nullptr) {
         g_running = false;
@@ -272,14 +272,14 @@ Java_com_music_bitchord_desktop_DesktopWindowsMedia_nativeUpdate(
         widen(env, title), widen(env, artist), widen(env, album), widen(env, art),
         playing == JNI_TRUE, position_ms, duration_ms,
     };
-    if (!PostMessageW(g_window, WM_BITCHORD_UPDATE, 0, reinterpret_cast<LPARAM>(update))) {
+    if (!PostMessageW(g_window, WM_CHORDWAVE_UPDATE, 0, reinterpret_cast<LPARAM>(update))) {
         delete update;
     }
 }
 
 JNIEXPORT void JNICALL
 Java_com_music_bitchord_desktop_DesktopWindowsMedia_nativeStop(JNIEnv*, jobject) {
-    if (g_window != nullptr) PostMessageW(g_window, WM_BITCHORD_QUIT, 0, 0);
+    if (g_window != nullptr) PostMessageW(g_window, WM_CHORDWAVE_QUIT, 0, 0);
     if (g_thread.joinable()) g_thread.join();
 }
 

@@ -114,7 +114,7 @@ import com.music.bitchord.ui.components.LINE_FADE
 import com.music.bitchord.ui.graphics.fadingEdges
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.listentogether.PartyMember
@@ -489,7 +489,7 @@ internal fun TransportRow(
     ) {
         if (onToggleShuffle != null) {
             BottomGlyph(
-                icon = BitChordIcons.Shuffle,
+                icon = ChordWaveIcons.Shuffle,
                 contentDescription = stringResource(
                     if (shuffleEnabled == true) Res.string.shuffle_on else Res.string.shuffle_off,
                 ),
@@ -541,7 +541,7 @@ internal fun TransportRow(
         )
         if (onCycleRepeat != null && repeatMode != null) {
             BottomGlyph(
-                icon = if (repeatMode == RepeatModes.ONE) null else BitChordIcons.Repeat,
+                icon = if (repeatMode == RepeatModes.ONE) null else ChordWaveIcons.Repeat,
                 label = if (repeatMode == RepeatModes.ONE) "1" else null,
                 contentDescription = when (repeatMode) {
                     RepeatModes.ONE -> stringResource(Res.string.repeat_one)
@@ -657,7 +657,7 @@ internal fun PlayerActionRow(
                     .offset { IntOffset((closeIn.toPx() * compactness.value).roundToInt(), 0) },
             ) {
                 BottomGlyph(
-                    icon = BitChordIcons.LyricsQuote,
+                    icon = ChordWaveIcons.LyricsQuote,
                     contentDescription = stringResource(if (lyricsOpen) Res.string.close_lyrics else Res.string.open_lyrics),
                     // Lyrics and the queue are two things to show in one place, so
                     // opening either closes the other; lit to say which is up.
@@ -682,7 +682,7 @@ internal fun PlayerActionRow(
                     // read as one control growing a segment.
                     Pill {
                         PillSegment(
-                            icon = BitChordIcons.Shuffle,
+                            icon = ChordWaveIcons.Shuffle,
                             contentDescription = stringResource(
                                 if (shuffleEnabled) Res.string.shuffle_on else Res.string.shuffle_off,
                             ),
@@ -693,7 +693,7 @@ internal fun PlayerActionRow(
                         )
                         PillDivider()
                         PillSegment(
-                            icon = if (repeatMode == RepeatModes.ONE) null else BitChordIcons.Repeat,
+                            icon = if (repeatMode == RepeatModes.ONE) null else ChordWaveIcons.Repeat,
                             label = if (repeatMode == RepeatModes.ONE) "1" else null,
                             contentDescription = when (repeatMode) {
                                 RepeatModes.ONE -> stringResource(Res.string.repeat_one)
@@ -714,7 +714,7 @@ internal fun PlayerActionRow(
                         )
                         PillDivider()
                         PillSegment(
-                            icon = BitChordIcons.Infinity,
+                            icon = ChordWaveIcons.Infinity,
                             contentDescription = stringResource(
                                 if (autoplayEnabled) Res.string.autoplay_on else Res.string.autoplay_off,
                             ),
@@ -738,7 +738,7 @@ internal fun PlayerActionRow(
                     .offset { IntOffset(-(closeIn.toPx() * compactness.value).roundToInt(), 0) },
             ) {
                 BottomGlyph(
-                    icon = BitChordIcons.Queue,
+                    icon = ChordWaveIcons.Queue,
                     contentDescription = stringResource(Res.string.up_next),
                     onClick = onToggleQueue,
                     highlighted = queueOpen,
@@ -759,7 +759,7 @@ private const val CIRCLE_DISC_DODGE_GAIN = 2.5f
  * [active] brightens the disc rather than only the glyph: this sits on album
  * artwork of any colour, and a white icon on a white-ish sleeve has no tint
  * change left to make. The filled star carries the state as a shape too —
- * see [BitChordIcons.StarFilled].
+ * see [ChordWaveIcons.StarFilled].
  */
 @Composable
 internal fun CircleGlyph(

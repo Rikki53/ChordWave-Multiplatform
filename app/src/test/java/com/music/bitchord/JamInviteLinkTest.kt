@@ -479,7 +479,7 @@ class JamInviteLinkTest {
         assertTrue(validatePayload(true, """{"ok":true,"serverMs":1789836652479}"""))
 
         // Catch-all root response (from invalid subpath like /1324/healthz)
-        assertFalse(validatePayload(true, """{"maxMembers":5,"parties":0,"serverMs":1789836644489,"service":"bitchord-listen-together"}"""))
+        assertFalse(validatePayload(true, """{"maxMembers":5,"parties":0,"serverMs":1789836644489,"service":"chordwave-listen-together"}"""))
 
         // Captive portal / proxy HTML response
         assertFalse(validatePayload(true, "<!DOCTYPE html><html><body>Login Required</body></html>"))

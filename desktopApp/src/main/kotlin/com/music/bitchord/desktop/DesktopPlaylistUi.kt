@@ -71,7 +71,7 @@ import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.UiState
 import com.music.bitchord.data.model.UserPlaylist
 import com.music.bitchord.ui.components.contextClick
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 
 /** Where a track goes: one of the account's playlists, a local one, or a new one. */
 @Composable
@@ -107,7 +107,7 @@ internal fun DesktopPlaylistDialog(
 
         DialogHeading("Add to playlist", song?.let { "${it.title} — ${it.artist}" }.orEmpty())
         error?.let { DialogError(it) }
-        DialogAction(BitChordIcons.Plus, "New playlist", enabled = !busy) { creating = true }
+        DialogAction(ChordWaveIcons.Plus, "New playlist", enabled = !busy) { creating = true }
 
         if (signedIn && !canUseAccount) {
             Text(
@@ -143,7 +143,7 @@ internal fun DesktopPlaylistDialog(
                     items(account.size, key = { account[it].playlistId }) { index ->
                         val playlist = account[index]
                         DialogAction(
-                            BitChordIcons.Queue,
+                            ChordWaveIcons.Queue,
                             playlist.title,
                             subtitle = playlist.subtitle,
                             enabled = !busy,
@@ -155,7 +155,7 @@ internal fun DesktopPlaylistDialog(
                     items(localPlaylists.size, key = { localPlaylists[it].id }) { index ->
                         val playlist = localPlaylists[index]
                         DialogAction(
-                            BitChordIcons.Queue,
+                            ChordWaveIcons.Queue,
                             playlist.title,
                             subtitle = "${playlist.songs.size} songs",
                             enabled = !busy,

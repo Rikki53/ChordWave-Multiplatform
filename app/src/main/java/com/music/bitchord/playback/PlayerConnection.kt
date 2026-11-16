@@ -497,9 +497,9 @@ val MediaItem.queueEntryId: String?
     get() = mediaMetadata.extras?.getString(EXTRA_QUEUE_ENTRY_ID) ?: mediaItemEntryIds[this]
 
 /** Public metadata keys for queue categorization and immutable queue entry identity. */
-const val EXTRA_QUEUE_TIER = "bitchord.queueTier"
-const val EXTRA_QUEUE_ENTRY_ID = "bitchord.queueEntryId"
-const val EXTRA_CANONICAL_INDEX = "bitchord.canonicalIndex"
+const val EXTRA_QUEUE_TIER = "chordwave.queueTier"
+const val EXTRA_QUEUE_ENTRY_ID = "chordwave.queueEntryId"
+const val EXTRA_CANONICAL_INDEX = "chordwave.canonicalIndex"
 
 /** Provenance index within the canonical collection (0-based). */
 val MediaItem.canonicalIndex: Int?
@@ -517,15 +517,15 @@ val MediaItem.canonicalIndex: Int?
  * MediaItem so it survives the trip through the session — the queue belongs to
  * the player, and the UI only ever sees it back through a MediaController.
  */
-private const val EXTRA_FROM_AUTOPLAY = "bitchord.fromAutoplay"
+private const val EXTRA_FROM_AUTOPLAY = "chordwave.fromAutoplay"
 
 /** @see Song.radioName */
-private const val EXTRA_RADIO_NAME = "bitchord.radioName"
+private const val EXTRA_RADIO_NAME = "chordwave.radioName"
 
 /** @see Song.playbackSource */
-private const val EXTRA_PLAYBACK_SOURCE = "bitchord.playbackSource"
-private const val EXTRA_PLAYBACK_SOURCE_TYPE = "bitchord.playbackSourceType"
-private const val EXTRA_PLAYBACK_SOURCE_ID = "bitchord.playbackSourceId"
+private const val EXTRA_PLAYBACK_SOURCE = "chordwave.playbackSource"
+private const val EXTRA_PLAYBACK_SOURCE_TYPE = "chordwave.playbackSourceType"
+private const val EXTRA_PLAYBACK_SOURCE_ID = "chordwave.playbackSourceId"
 
 /**
  * The artist and album pages this track hangs under, when they are known.
@@ -535,17 +535,17 @@ private const val EXTRA_PLAYBACK_SOURCE_ID = "bitchord.playbackSourceId"
  * `links`), but a queue restored after a restart, or a track read back by the
  * service, has only what the item carries.
  */
-private const val EXTRA_ARTIST_ID = "bitchord.artistId"
-private const val EXTRA_ALBUM_ID = "bitchord.albumId"
+private const val EXTRA_ARTIST_ID = "chordwave.artistId"
+private const val EXTRA_ALBUM_ID = "chordwave.albumId"
 
 /** @see Song.setVideoId */
-private const val EXTRA_SET_VIDEO_ID = "bitchord.setVideoId"
+private const val EXTRA_SET_VIDEO_ID = "chordwave.setVideoId"
 
 /** @see Song.localUri */
-internal const val EXTRA_LOCAL_URI = "bitchord.localUri"
+internal const val EXTRA_LOCAL_URI = "chordwave.localUri"
 
 /** @see Song.localPath */
-internal const val EXTRA_LOCAL_PATH = "bitchord.localPath"
+internal const val EXTRA_LOCAL_PATH = "chordwave.localPath"
 
 /**
  * How long the track runs, as the row that queued it said.
@@ -557,21 +557,21 @@ internal const val EXTRA_LOCAL_PATH = "bitchord.localPath"
  * with the other loses information. Carried so that [toSong] can give it back
  * to the live queue and matching code.
  */
-private const val EXTRA_DURATION = "bitchord.durationText"
-private const val EXTRA_EXPLICIT = "bitchord.explicit"
+private const val EXTRA_DURATION = "chordwave.durationText"
+private const val EXTRA_EXPLICIT = "chordwave.explicit"
 
 /**
  * @see Song.sourceQuality — carried so an addon row rebuilt from the queue
  * (a restore, a reorder) keeps the `&mix=` its first item had; see
  * [SourceResolver.MIX_PARAM].
  */
-private const val EXTRA_SOURCE_QUALITY = "bitchord.sourceQuality"
-private const val EXTRA_SOURCE_HI_RES = "bitchord.sourceHiRes"
-private const val EXTRA_IS_VIDEO = "bitchord.isVideo"
-private const val EXTRA_VIDEO_ORIGIN = "bitchord.isVideoOrigin"
+private const val EXTRA_SOURCE_QUALITY = "chordwave.sourceQuality"
+private const val EXTRA_SOURCE_HI_RES = "chordwave.sourceHiRes"
+private const val EXTRA_IS_VIDEO = "chordwave.isVideo"
+private const val EXTRA_VIDEO_ORIGIN = "chordwave.isVideoOrigin"
 
 /** Set only on the replacement item produced by [QualityUpgrade]. */
-const val EXTRA_QUALITY_UPGRADED = "bitchord.qualityUpgraded"
+const val EXTRA_QUALITY_UPGRADED = "chordwave.qualityUpgraded"
 
 /** Whether this item was selected from a music-video row, even after conversion. */
 val MediaItem.isVideoOrigin: Boolean

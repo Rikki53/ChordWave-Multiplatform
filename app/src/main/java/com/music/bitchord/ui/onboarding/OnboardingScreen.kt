@@ -74,7 +74,7 @@ import com.music.bitchord.sharedui.resources.Res
 import com.music.bitchord.sharedui.resources.ic_google_g
 import com.music.bitchord.sharedui.resources.ic_logo
 import org.jetbrains.compose.resources.painterResource
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import com.music.bitchord.ui.player.MeshGradientBackground
 import com.music.bitchord.ui.player.MESH_CYCLE_MILLIS
 import com.music.bitchord.ui.player.MeshPalette
@@ -423,7 +423,7 @@ private fun BackButton(onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = BitChordIcons.ChevronRight,
+            imageVector = ChordWaveIcons.ChevronRight,
             contentDescription = stringResource(R.string.onboarding_back),
             tint = Color.White,
             modifier = Modifier

@@ -107,7 +107,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.bitchord.ui.haptics.Haptic
 import com.music.bitchord.ui.haptics.rememberHaptics
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.listentogether.PartyMember
@@ -637,7 +637,7 @@ internal fun PlayerActionRow(
                 modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 BottomGlyph(
-                    icon = BitChordIcons.LyricsQuote,
+                    icon = ChordWaveIcons.LyricsQuote,
                     contentDescription = stringResource(if (lyricsOpen) Res.string.close_lyrics else Res.string.open_lyrics),
                     // Lyrics and the queue are two things to show in one place, so
                     // opening either closes the other; lit to say which is up.
@@ -690,7 +690,7 @@ internal fun PlayerActionRow(
             }
             Box(Modifier.align(Alignment.CenterEnd)) {
                 BottomGlyph(
-                    icon = BitChordIcons.Queue,
+                    icon = ChordWaveIcons.Queue,
                     contentDescription = stringResource(Res.string.up_next),
                     onClick = onToggleQueue,
                     highlighted = queueOpen,
@@ -714,7 +714,7 @@ private fun PlaybackModesPill(
 ) {
     Pill {
         PillSegment(
-            icon = BitChordIcons.Shuffle,
+            icon = ChordWaveIcons.Shuffle,
             contentDescription = stringResource(
                 if (shuffleEnabled) Res.string.shuffle_on else Res.string.shuffle_off,
             ),
@@ -725,7 +725,7 @@ private fun PlaybackModesPill(
         )
         PillDivider()
         PillSegment(
-            icon = if (repeatMode == RepeatModes.ONE) null else BitChordIcons.Repeat,
+            icon = if (repeatMode == RepeatModes.ONE) null else ChordWaveIcons.Repeat,
             label = if (repeatMode == RepeatModes.ONE) "1" else null,
             contentDescription = when (repeatMode) {
                 RepeatModes.ONE -> stringResource(Res.string.repeat_one)
@@ -746,7 +746,7 @@ private fun PlaybackModesPill(
         )
         PillDivider()
         PillSegment(
-            icon = BitChordIcons.Infinity,
+            icon = ChordWaveIcons.Infinity,
             contentDescription = stringResource(
                 if (autoplayEnabled) Res.string.autoplay_on else Res.string.autoplay_off,
             ),
@@ -764,7 +764,7 @@ private fun PlaybackModesPill(
  * [active] brightens the disc rather than only the glyph: this sits on album
  * artwork of any colour, and a white icon on a white-ish sleeve has no tint
  * change left to make. The filled heart carries the state as a shape too —
- * see [BitChordIcons.HeartFilled].
+ * see [ChordWaveIcons.HeartFilled].
  */
 @Composable
 internal fun CircleGlyph(

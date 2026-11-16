@@ -120,11 +120,16 @@ internal object DesktopListenTogether {
         isLenient = true
     }
 
-    /** Where the party server lives, injected at build time like the other endpoints. */
+    /**
+     * Where the party server lives: the build-time
+     * `chordwave.listentogether.server` property when one was injected, otherwise
+     * ChordWave's own party server.
+     */
     private val DEFAULT_SERVER: String by lazy {
-        normalizeServerUrl(System.getProperty("bitchord.listentogether.server").orEmpty())
-            .getOrNull()
-            .orEmpty()
+        val injected = normalizeServerUrl(
+            System.getProperty("chordwave.listentogether.server").orEmpty(),
+        ).getOrNull().orEmpty()
+        if (injected.isNotBlank()) injected else "https://party.rikinurjaman.my.id"
     }
 
     private val http = HttpClient(CIO) {

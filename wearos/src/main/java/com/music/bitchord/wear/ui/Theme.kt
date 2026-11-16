@@ -44,7 +44,7 @@ object WearType {
 }
 
 @Composable
-fun BitChordWearTheme(content: @Composable () -> Unit) {
+fun ChordWaveWearTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = ColorScheme(
             primary = Color.White,

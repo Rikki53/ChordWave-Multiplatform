@@ -47,7 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import kotlin.math.abs
 
 /** Which lyric databases the player may ask, and in what order. */
@@ -303,7 +303,7 @@ private fun CheckableRow(
         Spacer(Modifier.width(10.dp))
         // A checkmark rather than a checkbox.
         if (checked) {
-            Icon(BitChordIcons.Check, DesktopStrings["enabled", "Enabled"], tint = DesktopAccent, modifier = Modifier.size(18.dp))
+            Icon(ChordWaveIcons.Check, DesktopStrings["enabled", "Enabled"], tint = DesktopAccent, modifier = Modifier.size(18.dp))
         } else {
             Spacer(Modifier.size(18.dp))
         }

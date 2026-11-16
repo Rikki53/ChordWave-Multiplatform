@@ -86,7 +86,7 @@ object VocalSpectrogram {
  * CC-BY-NC-4.0, which a distributed application cannot ship, and its ONNX export additionally has
  * unresolved blockers around complex-valued STFT ops.
  *
- * Only the vocals target is used. open-unmix trains four independent checkpoints; BitChord needs to
+ * Only the vocals target is used. open-unmix trains four independent checkpoints; ChordWave needs to
  * know how much vocal content is present at an instant, not to reconstruct four stems.
  */
 class VocalTracker(
@@ -267,7 +267,7 @@ class VocalTracker(
     }
 
     companion object {
-        private const val TAG = "BitChordVocalTracker"
+        private const val TAG = "ChordWaveVocalTracker"
         /** The weights this tracker needs, named once for every build that ships them. */
         const val MODEL_ASSET = "vocals_umxhq_int8.onnx"
         /** The model's fixed input width, ~22.8 s, chosen upstream to cover a transition overlap. */

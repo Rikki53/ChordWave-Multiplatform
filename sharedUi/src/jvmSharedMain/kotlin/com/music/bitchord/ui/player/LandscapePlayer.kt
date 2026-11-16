@@ -63,7 +63,7 @@ import coil3.request.ImageRequest
 import com.music.bitchord.ui.components.ExplicitBadge
 import com.music.bitchord.ui.components.menuAnchor
 import com.music.bitchord.ui.haptics.Haptic
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import com.music.bitchord.ui.theme.stableStatusBarInsets
 import com.music.bitchord.data.canvas.CanvasArtwork
 import com.music.bitchord.data.model.LikeStatus
@@ -322,7 +322,7 @@ internal fun LandscapeArtwork(
         ) {
             if (!artLoaded && !canvasRendered) {
                 Icon(
-                    imageVector = BitChordIcons.MusicNote,
+                    imageVector = ChordWaveIcons.MusicNote,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = 0.35f),
                     modifier = Modifier.fillMaxSize(0.36f),
@@ -470,7 +470,7 @@ internal fun LandscapeCredits(
         if (signedIn || song.localUri != null) {
             val liked = likeStatus == LikeStatus.LIKE
             CircleGlyph(
-                icon = if (liked) BitChordIcons.StarFilled else BitChordIcons.Star,
+                icon = if (liked) ChordWaveIcons.StarFilled else ChordWaveIcons.Star,
                 contentDescription = stringResource(
                     if (liked) Res.string.remove_from_liked else Res.string.like,
                 ),

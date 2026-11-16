@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.bitchord.data.NerdStats
 import com.music.bitchord.data.model.Song
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -740,7 +740,7 @@ internal fun DesktopChoiceDialog(
                     Text(option.detail, style = MaterialTheme.typography.bodySmall, color = DesktopSecondary)
                 }
                 if (option.id == selected) {
-                    Icon(BitChordIcons.Check, DesktopStrings["selected", "Selected"], tint = DesktopAccent, modifier = Modifier.size(18.dp))
+                    Icon(ChordWaveIcons.Check, DesktopStrings["selected", "Selected"], tint = DesktopAccent, modifier = Modifier.size(18.dp))
                 }
             }
         }

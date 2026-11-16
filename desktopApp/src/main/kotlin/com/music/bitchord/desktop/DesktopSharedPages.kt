@@ -10,7 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import com.music.bitchord.ui.icons.BitChordIcons
+import com.music.bitchord.ui.icons.ChordWaveIcons
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -89,7 +89,7 @@ internal object DesktopAppUiHost : AppUiHost {
         _librarySort.value = value
     }
 
-    /** Kept current by the app, which owns the download list — see `BitChordDesktopApp`. */
+    /** Kept current by the app, which owns the download list — see `ChordWaveDesktopApp`. */
     val downloaded = MutableStateFlow<Set<String>>(emptySet())
 
     @Composable
@@ -289,7 +289,7 @@ internal fun DesktopPlayPill(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            BitChordIcons.Play,
+            ChordWaveIcons.Play,
             contentDescription = if (iconOnly) label else null,
             tint = Color.Black,
             modifier = Modifier.size(if (iconOnly) size * 0.44f else 18.dp),

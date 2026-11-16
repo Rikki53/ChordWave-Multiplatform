@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/KabirSinghBhatia/BitChord/backend/codes"
-	"github.com/KabirSinghBhatia/BitChord/backend/config"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/codes"
+	"github.com/Rikki53/ChordWave-Multiplatform/backend/config"
 )
 
 func TestCodeNormalisation(t *testing.T) {

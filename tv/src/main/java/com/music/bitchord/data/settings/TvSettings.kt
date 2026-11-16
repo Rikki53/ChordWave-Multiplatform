@@ -19,7 +19,7 @@ enum class TvPlayerStyle(val label: String) {
 
 /**
  * The Android TV app's own preferences. They live in the same preferences file
- * as [AppSettings] — `bitchord_settings` — under `tv_`-prefixed keys, so the
+ * as [AppSettings] — `chordwave_settings` — under `tv_`-prefixed keys, so the
  * phone's settings class carries nothing of TV. Loaded by
  * [com.music.bitchord.data.TvStartup] before anything reads them.
  */
@@ -69,7 +69,7 @@ object TvSettings {
     }
 
     fun init(context: Context) {
-        init(context.getSharedPreferences("bitchord_settings", Context.MODE_PRIVATE))
+        init(context.getSharedPreferences("chordwave_settings", Context.MODE_PRIVATE))
     }
 
     private fun save(edit: SharedPreferences.Editor.() -> Unit) {

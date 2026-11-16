@@ -40,8 +40,8 @@ class AddonAuthTest {
     private fun ok() = MockResponse().setBody("""{"tracks":[{"id":"1","title":"Song","artist":"Artist"}]}""")
 
     private fun challenge(code: String) = MockResponse().setResponseCode(401)
-        .setHeader("WWW-Authenticate", """BitChord realm="bitchord-addons", error="$code", error_description="x"""")
-        .setBody("""{"error":"bitchord_auth","code":"$code"}""")
+        .setHeader("WWW-Authenticate", """ChordWave realm="chordwave-addons", error="$code", error_description="x"""")
+        .setBody("""{"error":"chordwave_auth","code":"$code"}""")
 
     @Before
     fun setUp() {
@@ -84,7 +84,7 @@ class AddonAuthTest {
     }
 
     @Test
-    fun `a 401 BitChord challenge is answered with credentials, once`() = runBlocking {
+    fun `a 401 ChordWave challenge is answered with credentials, once`() = runBlocking {
         search = { token -> if (token == null) challenge("missing") else ok() }
         val result = client().search("song", AddonClient.TIER_LOSSLESS)
         assertTrue(result.exceptionOrNull()?.message, result.isSuccess)
@@ -117,7 +117,7 @@ class AddonAuthTest {
     fun `a final refusal says why instead of looping`() = runBlocking {
         search = { challenge("invalid_proof") }
         val failure = client().search("song", AddonClient.TIER_LOSSLESS).exceptionOrNull()
-        assertEquals("This addon didn't accept BitChord's verification (invalid_proof)", failure?.message)
+        assertEquals("This addon didn't accept ChordWave's verification (invalid_proof)", failure?.message)
         assertEquals(2, searches().size)
     }
 
@@ -133,7 +133,7 @@ class AddonAuthTest {
         val pair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         // Enough rounds to hit r and s with leading zero bytes, the case naive conversions get wrong.
         repeat(300) { i ->
-            val message = "bitchord-addon-proof/v1\naddon.example.com\n$i\nhash".toByteArray()
+            val message = "chordwave-addon-proof/v1\naddon.example.com\n$i\nhash".toByteArray()
             val der = Signature.getInstance("SHA256withECDSA").run { initSign(pair.private); update(message); sign() }
             val raw = AddonAuth.derToRaw(der)
             assertEquals(64, raw.size)
@@ -147,7 +147,7 @@ class AddonAuthTest {
     @Test
     fun `the signed message matches the protocol exactly`() {
         assertEquals(
-            "bitchord-addon-proof/v1\naddon.example.com\n1762300000000\nabc",
+            "chordwave-addon-proof/v1\naddon.example.com\n1762300000000\nabc",
             AddonAuth.proofMessage("addon.example.com", 1762300000000, "abc"),
         )
         assertEquals("addon.example.com", AddonAuth.normalizeHost(" Addon.Example.COM. "))
