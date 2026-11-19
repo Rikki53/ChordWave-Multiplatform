@@ -41,8 +41,8 @@ buildscript {
  * No "v" in the name — the in-app updater reads it as a number; the "v" is the
  * release tag's alone.
  */
-extra["chordwaveVersionCode"] = 43
-extra["chordwaveVersionName"] = "2.2.3"
+extra["chordwaveVersionCode"] = 44
+extra["chordwaveVersionName"] = "2.2.4"
 
 /*
  * Bump this by hand before cutting each sideloaded test build ("beta2",

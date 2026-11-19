@@ -61,7 +61,7 @@ internal object DesktopUpdateChecker {
     private const val LATEST_RELEASE_URL =
         "https://api.github.com/repos/Rikki53/ChordWave-Multiplatform/releases/latest"
 
-    val currentVersion: String = System.getProperty("chordwave.version") ?: "2.2.3"
+    val currentVersion: String = System.getProperty("chordwave.version") ?: "2.2.4"
 
     private val json = Json { ignoreUnknownKeys = true }
 

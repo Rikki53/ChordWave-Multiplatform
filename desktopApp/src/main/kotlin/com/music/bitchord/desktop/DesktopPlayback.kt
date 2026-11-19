@@ -192,19 +192,59 @@ internal object DesktopStreamClient {
             }
         }
         DesktopTrackLog.log("  youtube: resolved '${song.title}' through InnerTubeX")
-        DesktopStream(
-            url = url,
-            format = DesktopStreamFormat(
-                codec = mimeOf(url),
-                kbps = NerdStats.pickedBitrateKbps(song.videoId),
-            ),
-            headers = StreamResolver.mediaHeadersFor(url),
-            sourceId = "youtube",
-            // Google's media servers answer 403 to a request for a whole file and 206 to one for
-            // a window of it, and FFmpeg's own HTTP client asks for the whole thing.
-            windowedReads = true,
-        )
+        streamFor(url, NerdStats.pickedBitrateKbps(song.videoId))
     }
+
+    /**
+     * As [resolve], but for a file being kept rather than a stream being heard:
+     * AAC-in-MP4 is asked for first, because macOS's players — Apple Music,
+     * QuickTime, Finder — cannot play Opus-in-WebM at all, while AAC-in-MP4
+     * plays everywhere. A track with no AAC stream falls back to the playback
+     * pick rather than failing the download.
+     *
+     * The container is asked of the shared resolver up front (its
+     * `resolveForDownload` with `requireM4a`, the same call Android's export
+     * makes), not filtered out of whatever playback picked: renaming a WebM
+     * file `.m4a` would still leave Opus inside it, which Apple cannot play
+     * in any container.
+     */
+    suspend fun resolveForDownload(song: Song, maxKbps: Int = Int.MAX_VALUE): Result<DesktopStream> = runCatching {
+        val picked = withContext(Dispatchers.IO) {
+            ceiling.set(maxKbps)
+            try {
+                runCatching { StreamResolver.resolveForDownload(song.videoId, maxKbps, requireM4a = true) }
+                    .fold(
+                        onSuccess = { it.url to it.kbps.takeIf { kbps -> kbps > 0 } },
+                        onFailure = { failure ->
+                            if (failure is CancellationException) throw failure
+                            DesktopTrackLog.log(
+                                "  youtube: no AAC stream for '${song.title}' " +
+                                    "(${failure.message}); keeping the playback pick",
+                            )
+                            StreamResolver.resolve(song.videoId) to NerdStats.pickedBitrateKbps(song.videoId)
+                        },
+                    )
+            } finally {
+                ceiling.remove()
+            }
+        }
+        DesktopTrackLog.log("  youtube: resolved '${song.title}' for download through InnerTubeX")
+        streamFor(picked.first, picked.second)
+    }
+
+    /** A resolved URL in the shape the player and the downloader both read. */
+    private fun streamFor(url: String, kbps: Int?): DesktopStream = DesktopStream(
+        url = url,
+        format = DesktopStreamFormat(
+            codec = mimeOf(url),
+            kbps = kbps,
+        ),
+        headers = StreamResolver.mediaHeadersFor(url),
+        sourceId = "youtube",
+        // Google's media servers answer 403 to a request for a whole file and 206 to one for
+        // a window of it, and FFmpeg's own HTTP client asks for the whole thing.
+        windowedReads = true,
+    )
 
     suspend fun resolveUrl(song: Song): Result<String> = resolve(song).map(DesktopStream::url)
 
