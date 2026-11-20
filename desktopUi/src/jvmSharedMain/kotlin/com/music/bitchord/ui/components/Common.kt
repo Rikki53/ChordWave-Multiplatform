@@ -680,7 +680,7 @@ fun Modifier.hangIntoGutter(outset: Dp): Modifier = layout { measurable, constra
 }
 
 /** The accent a current song's title takes in lists that mark it with [SearchPlayingBars]. */
-val PlayingAccent = Color(0xFFFB4A62)
+val PlayingAccent = Color(0xFFFA2D48)
 
 @Composable
 fun SearchPlayingBars(modifier: Modifier = Modifier) {

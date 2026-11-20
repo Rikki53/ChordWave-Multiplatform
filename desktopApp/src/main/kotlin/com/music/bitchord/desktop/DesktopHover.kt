@@ -84,7 +84,7 @@ internal fun Modifier.desktopHoverWash(
             val alpha = restAlpha + (hoverAlpha - restAlpha) * wash
             if (alpha <= 0.001f) return@drawBehind
             drawCircle(
-                color = androidx.compose.ui.graphics.Color.White.copy(alpha = alpha),
+                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = alpha),
                 radius = size.minDimension / 2f,
             )
         }
@@ -119,7 +119,7 @@ internal fun Modifier.desktopHoverFill(
             if (wash <= 0.01f) return@drawBehind
             val radius = corner.toPx()
             drawRoundRect(
-                color = androidx.compose.ui.graphics.Color.White.copy(alpha = alpha * wash),
+                color = androidx.compose.ui.graphics.Color.Black.copy(alpha = alpha * wash),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius, radius),
             )
         }

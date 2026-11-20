@@ -194,7 +194,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -359,14 +359,17 @@ import org.jetbrains.compose.resources.painterResource
  */
 internal val DesktopPageGutter = PAGE_GUTTER
 
-internal val DesktopBackground = Color(0xFF202020)
-internal val DesktopSurface = Color(0xFF0D0D0F)
-private val DesktopSurfaceRaised = Color(0xFF1C1C1E)
-internal val DesktopGlass = Color(0x661C1C1E)
-internal val DesktopGlassStrong = Color(0xCC0D0D0F)
+/** The app's own ink: near-black, the way Apple Music's light theme draws text. */
+internal val DesktopOnBackground = Color(0xFF1D1D1F)
+
+internal val DesktopBackground = Color(0xFFF5F5F7)
+internal val DesktopSurface = Color(0xFFFFFFFF)
+private val DesktopSurfaceRaised = Color(0xFFF5F5F7)
+internal val DesktopGlass = Color(0x66F5F5F7)
+internal val DesktopGlassStrong = Color(0xCCFFFFFF)
 
 /** The floating bars in the narrow layout. */
-private val DesktopBarGlass = Color(0xB324242A)
+private val DesktopBarGlass = Color(0xB3FFFFFF)
 
 /** The backdrop the floating bars blur. */
 private val LocalDesktopHaze = staticCompositionLocalOf<HazeState?> { null }
@@ -374,34 +377,35 @@ private val LocalDesktopHaze = staticCompositionLocalOf<HazeState?> { null }
 /** How much a page's scrollable should keep clear of the floating bars. */
 private val LocalDesktopBottomInset = staticCompositionLocalOf { 0.dp }
 
-/** Android's own edge on these bars: `Color.White.copy(alpha = 0.10f)`. */
-private val DesktopBarEdge = Color(0x1AFFFFFF)
-internal val DesktopAccent = Color.White
+/** Android's own edge on these bars: `Color.Black.copy(alpha = 0.10f)` on a light bar. */
+private val DesktopBarEdge = Color(0x1A000000)
+/** Apple Music's red: the selected sidebar row, the playing row, the active glyph. */
+internal val DesktopAccent = Color(0xFFFA2D48)
 
 /** Deleting, signing out, and anything that failed — the one place a colour survives, as on Android. */
 internal val DesktopDestructive = Color(0xFFFF453A)
 
-/** A chip the way Android draws a chosen segment: solid white with black on it, or nothing at all. */
+/** A chip the way a light theme draws a chosen segment: solid red with white on it, or nothing at all. */
 @Composable
 internal fun desktopChipColors() = FilterChipDefaults.filterChipColors(
     containerColor = Color.Transparent,
     labelColor = DesktopSecondary,
-    selectedContainerColor = Color.White,
-    selectedLabelColor = Color.Black,
+    selectedContainerColor = DesktopAccent,
+    selectedLabelColor = Color.White,
 )
 
-/** Android's switch: a white track with a black knob on, a faint wash off. */
+/** A light theme's switch: a red track with a white knob on, a faint wash off. */
 @Composable
 internal fun desktopSwitchColors() = SwitchDefaults.colors(
-    checkedTrackColor = Color.White,
-    checkedThumbColor = Color.Black,
+    checkedTrackColor = DesktopAccent,
+    checkedThumbColor = Color.White,
     checkedBorderColor = Color.Transparent,
-    uncheckedTrackColor = Color.White.copy(alpha = 0.10f),
-    uncheckedThumbColor = Color.White.copy(alpha = 0.35f),
+    uncheckedTrackColor = Color.Black.copy(alpha = 0.10f),
+    uncheckedThumbColor = Color.White,
     uncheckedBorderColor = Color.Transparent,
 )
 internal val DesktopSecondary = Color(0xFF8E8E93)
-internal val DesktopDivider = Color(0xFF2C2C2E)
+internal val DesktopDivider = Color(0xFFE5E5EA)
 private const val STATS_SAMPLE_MS = 5_000L
 
 /** How often the playhead is offered to the history tracker. */
@@ -443,20 +447,20 @@ private const val PARTY_AUTOPLAY_ECHO_TIMEOUT_MS = 5_000L
 /** The phone gives one empty station response a delayed second chance. */
 private const val AUTOPLAY_EMPTY_REFRESH_DELAY_MS = 2_000L
 
-/** The phone's dark scheme, which the shared pages are drawn against. */
-internal fun desktopColorScheme() = darkColorScheme(
+/** The light scheme, Apple Music style: white pages, near-black ink, red accent. */
+internal fun desktopColorScheme() = lightColorScheme(
     primary = DesktopAccent,
-    // Black on the accent, now that the accent is white.
-    onPrimary = Color.Black,
-    primaryContainer = Color.White.copy(alpha = 0.16f),
-    onPrimaryContainer = Color.White,
+    // White on the red accent.
+    onPrimary = Color.White,
+    primaryContainer = DesktopAccent.copy(alpha = 0.12f),
+    onPrimaryContainer = DesktopOnBackground,
     background = DesktopBackground,
-    onBackground = Color.White,
+    onBackground = DesktopOnBackground,
     surface = DesktopSurface,
-    onSurface = Color.White,
+    onSurface = DesktopOnBackground,
     surfaceVariant = DesktopSurfaceRaised,
     onSurfaceVariant = DesktopSecondary,
-    outline = Color(0xFF2C2C2E),
+    outline = Color(0xFFD2D2D7),
     outlineVariant = DesktopDivider,
     surfaceTint = DesktopAccent,
 )
@@ -3510,7 +3514,7 @@ fun ChordWaveDesktopApp() {
         val ambientBackdrop by DesktopAppearanceSettings.ambientBackdrop.collectAsState()
         val windowActions = LocalDesktopWindowActions.current
         CompositionLocalProvider(
-            LocalContentColor provides Color.White,
+            LocalContentColor provides DesktopOnBackground,
             LocalNowPlaying provides selectedSong,
         ) {
             DesktopFrame(
@@ -3524,6 +3528,9 @@ fun ChordWaveDesktopApp() {
                     DesktopPageBackdrop(
                         artworkUrl = ambientArtworkUrl,
                         transparentBase = transparentBase,
+                        // Replay dresses in white on the mesh; the ambient backdrop veils light
+                        // instead, so the dark ink over it still reads.
+                        dark = overlays.replay,
                     )
                 },
                 modifier = Modifier.onPreviewKeyEvent { event ->
@@ -6171,7 +6178,7 @@ private fun DesktopFrame(
  * ink so a page of text stays readable over it.
  */
 @Composable
-private fun DesktopPageBackdrop(artworkUrl: String?, transparentBase: Boolean) {
+private fun DesktopPageBackdrop(artworkUrl: String?, transparentBase: Boolean, dark: Boolean = false) {
     Box(
         Modifier
             .fillMaxSize()
@@ -6181,13 +6188,23 @@ private fun DesktopPageBackdrop(artworkUrl: String?, transparentBase: Boolean) {
         DesktopMesh(artworkUrl)
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color.Black.copy(alpha = 0.30f),
-                        Color.Black.copy(alpha = 0.72f),
-                        Color.Black.copy(alpha = 0.88f),
-                    ),
-                ),
+                if (dark) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.30f),
+                            Color.Black.copy(alpha = 0.72f),
+                            Color.Black.copy(alpha = 0.88f),
+                        ),
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.55f),
+                            Color.White.copy(alpha = 0.78f),
+                            Color.White.copy(alpha = 0.88f),
+                        ),
+                    )
+                },
             ),
         )
     }
@@ -8319,7 +8336,7 @@ internal fun Modifier.desktopChromeGlass(
 
 /**
  * The window's own chrome — title bar, top bar, sidebar. Over Windows 11's Mica or Acrylic
- * ([DesktopWindowBackdrop]) it is a light dark tint and nothing else, so DWM's material shows
+ * ([DesktopWindowBackdrop]) it is a light tint and nothing else, so DWM's material shows
  * through; the in-app blur would paint the page's backdrop over it. Otherwise the in-app glass.
  *
  * No dissolve over the material: it would fade the tint out into bare material right where the
@@ -8334,7 +8351,7 @@ internal fun Modifier.desktopWindowGlass(
     return if (backdrop == DesktopBackdrop.OFF) {
         desktopChromeGlass(edge, fade)
     } else {
-        val base = background(Color.Black.copy(alpha = WINDOW_GLASS_TINT))
+        val base = background(Color.White.copy(alpha = WINDOW_GLASS_TINT))
         if (DesktopPlatform.isMac && edge == DesktopChromeEdge.BOTTOM) {
             base.drawBehind {
                 // Subtle liquid glass specular highlight along the top edge
@@ -8351,20 +8368,20 @@ internal fun Modifier.desktopWindowGlass(
     }
 }
 
-/** Enough to keep white text readable over a bright wallpaper, little enough to let it through. */
-private const val WINDOW_GLASS_TINT = 0.28f
+/** Enough to keep dark text readable over a bright wallpaper, little enough to let it through. */
+private const val WINDOW_GLASS_TINT = 0.55f
 
 /**
- * The separators in the window's chrome. Acrylic lets the wallpaper through bright, and the solid
- * dark divider cut across it as a black line; a faint white one reads as an edge in the glass
- * instead. Mica is dark enough for the usual one.
+ * The separators in the window's chrome. Acrylic lets the wallpaper through bright, and a
+ * faint dark line reads as an edge in the glass instead of a black cut. Mica is light enough
+ * for the usual one.
  */
 @Composable
 internal fun desktopChromeDivider(): Color {
     val backdrop by DesktopWindowBackdrop.active.collectAsState()
     return when {
-        backdrop == DesktopBackdrop.ACRYLIC -> Color.White.copy(alpha = 0.14f)
-        DesktopPlatform.isMac && backdrop != DesktopBackdrop.OFF -> Color.White.copy(alpha = 0.10f)
+        backdrop == DesktopBackdrop.ACRYLIC -> Color.Black.copy(alpha = 0.14f)
+        DesktopPlatform.isMac && backdrop != DesktopBackdrop.OFF -> Color.Black.copy(alpha = 0.10f)
         else -> DesktopDivider
     }
 }
@@ -8387,7 +8404,7 @@ private fun Modifier.desktopFrosted(
         blurEnabled = true
         backgroundColor = DesktopSurface
         blurRadius = 30.dp
-        // Dark enough that white text on the pane always wins, translucent enough that the
+        // Light enough that dark text on the pane always wins, translucent enough that the
         // colour of what is behind it still comes through.
         tints = listOf(HazeTint(DesktopSurface.copy(alpha = tintAlpha)))
         noiseFactor = 0.04f
