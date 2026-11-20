@@ -316,8 +316,6 @@ import com.music.bitchord.data.model.playingRowMatcher
 import com.music.bitchord.data.model.isUnresolvedSpotify
 import com.music.bitchord.data.spotify.SPOTIFY_PAGE_PREFIX
 import com.music.bitchord.data.spotify.SpotifyLibrary
-import com.music.bitchord.sharedui.resources.Res as SharedRes
-import com.music.bitchord.sharedui.resources.spotify_logo
 import com.music.bitchord.data.model.withoutRepeatsOf
 import com.music.bitchord.data.settings.AutomixPerformanceMode
 import com.music.bitchord.data.settings.LastPlayerScreen
@@ -4570,104 +4568,104 @@ fun ChordWaveDesktopApp() {
                                 ),
                             )
                             SearchScreen(
-                            query = query,
-                            onQueryChange = ::editQuery,
-                            filter = searchFilter,
-                            // The playing row's indicator, as the phone passes it: the engine's
-                            // live state, not the selection a track change publishes behind it.
-                            currentSong = playback.song,
-                            isPlaying = playback.isPlaying,
-                            onFilterChange = {
-                                searchFilter = it
-                                if (query.isNotBlank()) search()
-                            },
-                            results = when {
-                                searchLoading -> UiState.Loading
-                                searchError != null -> UiState.Error(searchError!!)
-                                searchCommitted -> UiState.Success(searchRows)
-                                else -> null
-                            },
-                            loadingMore = false,
-                            onLoadMore = {},
-                            listState = searchListState,
-                            scrollResetTrigger = searchScrollReset,
-                            focusRequested = searchFocusRequested,
-                            onFocusHandled = { searchFocusRequested = false },
-                            onSongClick = { songs, index ->
-                                songs.getOrNull(index)?.let { song ->
+                                query = query,
+                                onQueryChange = ::editQuery,
+                                filter = searchFilter,
+                                // The playing row's indicator, as the phone passes it: the engine's
+                                // live state, not the selection a track change publishes behind it.
+                                currentSong = playback.song,
+                                isPlaying = playback.isPlaying,
+                                onFilterChange = {
+                                    searchFilter = it
+                                    if (query.isNotBlank()) search()
+                                },
+                                results = when {
+                                    searchLoading -> UiState.Loading
+                                    searchError != null -> UiState.Error(searchError!!)
+                                    searchCommitted -> UiState.Success(searchRows)
+                                    else -> null
+                                },
+                                loadingMore = false,
+                                onLoadMore = {},
+                                listState = searchListState,
+                                scrollResetTrigger = searchScrollReset,
+                                focusRequested = searchFocusRequested,
+                                onFocusHandled = { searchFocusRequested = false },
+                                onSongClick = { songs, index ->
+                                    songs.getOrNull(index)?.let { song ->
+                                        recordSongSearch(song)
+                                        playSong(song, source = DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH))
+                                    }
+                                },
+                                onSongLongPress = ::openMenu,
+                                onSongSwipe = { song ->
+                                    if (DesktopAppUiHost.swipeToPlayNext.value) playNext(song) else addToQueue(song)
+                                },
+                                onTopResultPlay = { song ->
                                     recordSongSearch(song)
                                     playSong(song, source = DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH))
-                                }
-                            },
-                            onSongLongPress = ::openMenu,
-                            onSongSwipe = { song ->
-                                if (DesktopAppUiHost.swipeToPlayNext.value) playNext(song) else addToQueue(song)
-                            },
-                            onTopResultPlay = { song ->
-                                recordSongSearch(song)
-                                playSong(song, source = DesktopQueueSource(DesktopStrings["search", "Search"], PlaybackSourceType.SEARCH))
-                            },
-                            onTopResultPlaylist = { song ->
-                                recordSongSearch(song)
-                                playlistTarget = song
-                            },
-                            onBrowseClick = { item ->
-                                recordBrowseSearch(item)
-                                openBrowseItem(item)
-                            },
-                            history = searchHistory,
-                            // The typed text leads the list, put there by the keystroke rather than
-                            // taken from the response — the page drops it, as the phone's does.
-                            suggestions = if (searchTyping && query.isNotBlank()) {
-                                listOf(query) +
-                                    searchSuggestions.filterNot { it.equals(query, ignoreCase = true) }
-                            } else {
-                                emptyList()
-                            },
-                            typeaheadResults = if (searchTyping && query.isNotBlank()) searchTypeahead else emptyList(),
-                            onSubmit = ::search,
-                            onSuggestionClick = ::runSearch,
-                            onHistoryClick = { entity ->
-                                // Going back to a recent does not record it again, as on the phone.
-                                when (entity.entityType) {
-                                    EntityType.TRACK -> playSong(
-                                        Song(
-                                            videoId = entity.id,
-                                            title = entity.title,
-                                            artist = entity.subtitle,
-                                            thumbnailUrl = entity.artworkUrl,
-                                        ),
-                                        source = DesktopQueueSource(entity.title, PlaybackSourceType.SEARCH),
-                                    )
-                                    EntityType.ARTIST -> openArtist(entity.id, entity.title)
-                                    EntityType.ALBUM, EntityType.PLAYLIST -> openBrowseItem(
-                                        BrowseItem(
-                                            browseId = entity.id,
-                                            title = entity.title,
-                                            subtitle = entity.subtitle,
-                                            thumbnailUrl = entity.artworkUrl,
-                                            type = if (entity.entityType == EntityType.ALBUM) BrowseType.ALBUM else BrowseType.PLAYLIST,
-                                        ),
-                                    )
-                                    EntityType.OTHER -> Unit
-                                }
-                            },
-                            onHistoryRemove = DesktopSearchHistory::remove,
-                            onHistoryClear = DesktopSearchHistory::clear,
-                            onTypeaheadLongPress = ::openMenu,
-                            contentPadding = sharedPagePadding,
-                            topPadding = 0.dp,
-                            showField = false,
-                            modifier = Modifier.weight(1f),
-                            browseCategories = (exploreState as? UiState.Success)?.data
-                                ?.flatMap { it.items }
-                                ?.distinctBy { it.browseId to it.params }
-                                .orEmpty(),
-                            onBrowseCategoryClick = { item ->
-                                selectDestination(DesktopDestination.EXPLORE)
-                                openMoodGenre(item)
-                            },
-                        )
+                                },
+                                onTopResultPlaylist = { song ->
+                                    recordSongSearch(song)
+                                    playlistTarget = song
+                                },
+                                onBrowseClick = { item ->
+                                    recordBrowseSearch(item)
+                                    openBrowseItem(item)
+                                },
+                                history = searchHistory,
+                                // The typed text leads the list, put there by the keystroke rather than
+                                // taken from the response — the page drops it, as the phone's does.
+                                suggestions = if (searchTyping && query.isNotBlank()) {
+                                    listOf(query) +
+                                        searchSuggestions.filterNot { it.equals(query, ignoreCase = true) }
+                                } else {
+                                    emptyList()
+                                },
+                                typeaheadResults = if (searchTyping && query.isNotBlank()) searchTypeahead else emptyList(),
+                                onSubmit = ::search,
+                                onSuggestionClick = ::runSearch,
+                                onHistoryClick = { entity ->
+                                    // Going back to a recent does not record it again, as on the phone.
+                                    when (entity.entityType) {
+                                        EntityType.TRACK -> playSong(
+                                            Song(
+                                                videoId = entity.id,
+                                                title = entity.title,
+                                                artist = entity.subtitle,
+                                                thumbnailUrl = entity.artworkUrl,
+                                            ),
+                                            source = DesktopQueueSource(entity.title, PlaybackSourceType.SEARCH),
+                                        )
+                                        EntityType.ARTIST -> openArtist(entity.id, entity.title)
+                                        EntityType.ALBUM, EntityType.PLAYLIST -> openBrowseItem(
+                                            BrowseItem(
+                                                browseId = entity.id,
+                                                title = entity.title,
+                                                subtitle = entity.subtitle,
+                                                thumbnailUrl = entity.artworkUrl,
+                                                type = if (entity.entityType == EntityType.ALBUM) BrowseType.ALBUM else BrowseType.PLAYLIST,
+                                            ),
+                                        )
+                                        EntityType.OTHER -> Unit
+                                    }
+                                },
+                                onHistoryRemove = DesktopSearchHistory::remove,
+                                onHistoryClear = DesktopSearchHistory::clear,
+                                onTypeaheadLongPress = ::openMenu,
+                                contentPadding = sharedPagePadding,
+                                topPadding = 0.dp,
+                                showField = false,
+                                modifier = Modifier.weight(1f),
+                                browseCategories = (exploreState as? UiState.Success)?.data
+                                    ?.flatMap { it.items }
+                                    ?.distinctBy { it.browseId to it.params }
+                                    .orEmpty(),
+                                onBrowseCategoryClick = { item ->
+                                    selectDestination(DesktopDestination.EXPLORE)
+                                    openMoodGenre(item)
+                                },
+                            )
                         }
                         destination == DesktopDestination.PLAYLISTS && libraryShowAll != null -> Column(Modifier.fillMaxSize()) {
                             // The phone keeps the grid's sort beside it, in the bar above; here it sits

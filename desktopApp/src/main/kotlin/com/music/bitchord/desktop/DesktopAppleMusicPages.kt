@@ -921,7 +921,7 @@ internal fun DesktopSongsTablePage(
                         }
                     },
                 )
-                Spacer(Modifier.width(48.dp))
+                Spacer(Modifier.width(40.dp))
                 Spacer(Modifier.width(40.dp))
             }
             HorizontalDivider(
@@ -1061,7 +1061,7 @@ private fun DesktopSortHeader(
 @Composable
 internal fun DesktopMadeForYouPage(
     summary: DesktopReplaySummary,
-    holder: String?,
+    holder: String,
     onOpenReplay: () -> Unit,
     onPlaySong: (Song) -> Unit,
     onOpenArtist: (browseId: String?, name: String) -> Unit,
