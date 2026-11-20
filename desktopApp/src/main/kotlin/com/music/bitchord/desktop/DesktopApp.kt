@@ -21,7 +21,6 @@ import com.music.bitchord.ui.components.SourceQualityBadge
 import com.music.bitchord.ui.components.sourceQualityBadge
 import com.music.bitchord.ui.components.contextClick
 import com.music.bitchord.ui.components.trackColumnWidth
-import com.music.bitchord.ui.replay.ReplayCreditCard
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import com.music.bitchord.data.YtMusicRepository
@@ -32,8 +31,6 @@ import com.music.bitchord.ui.screens.ExploreScreen
 import com.music.bitchord.ui.screens.HomeScreen
 import com.music.bitchord.ui.screens.CompactTrackRow
 import com.music.bitchord.ui.screens.LibraryGridPage
-import com.music.bitchord.ui.screens.LibraryLink
-import com.music.bitchord.ui.screens.LibraryScreen
 import com.music.bitchord.ui.screens.MoodGenrePlaylistsScreen
 import com.music.bitchord.ui.screens.SearchScreen
 import com.music.bitchord.data.NerdStats
@@ -494,10 +491,16 @@ internal fun desktopTypography(): Typography {
     )
 }
 
-private enum class DesktopDestination(val id: String, val label: String) {
+private enum class DesktopDestination(val id: String, val label: String, val isLibrary: Boolean = false) {
     LISTEN_NOW("listen-now", "Home"),
-    EXPLORE("explore", "Explore"),
-    LIBRARY("library", "Library"),
+    EXPLORE("explore", "New"),
+    RADIO("radio", "Radio"),
+    RECENTLY_ADDED("recently-added", "Recently Added", true),
+    ARTISTS("artists", "Artists", true),
+    ALBUMS("albums", "Albums", true),
+    SONGS("songs", "Songs", true),
+    MADE_FOR_YOU("made-for-you", "Made for You", true),
+    PLAYLISTS("playlists", "All Playlists", true),
     SEARCH("search", "Search"),
     HISTORY("history", "History"),
     DOWNLOADS("downloads", "Downloads"),
@@ -639,7 +642,6 @@ fun ChordWaveDesktopApp() {
     val exploreListState = rememberLazyListState()
     val moodGenreListState = rememberLazyListState()
     val searchListState = rememberLazyListState()
-    val libraryListState = rememberLazyListState()
     val libraryGridState = rememberLazyGridState()
     /** A Library shelf's "Show all", open as a grid in place of the page. */
     var libraryShowAll by remember { mutableStateOf<HomeShelf?>(null) }
@@ -814,6 +816,11 @@ fun ChordWaveDesktopApp() {
             ?.items
             ?.filter { it.browseId != null }
             .orEmpty()
+    }
+    // The Apple Music library pages read one list: the account's library, local files and
+    // downloads, de-duplicated.
+    val libraryUnion = remember(libraryState, localSongs, downloads) {
+        desktopLibraryUnion((libraryState as? UiState.Success)?.data, localSongs, downloads)
     }
 
     fun reloadLibrary() {
@@ -2650,7 +2657,7 @@ fun ChordWaveDesktopApp() {
     }
 
     fun selectDestination(next: DesktopDestination) {
-        if (next == DesktopDestination.LIBRARY && libraryStale) {
+        if (next.isLibrary && libraryStale) {
             libraryStale = false
             reloadLibrary()
         }
@@ -2677,44 +2684,6 @@ fun ChordWaveDesktopApp() {
         overlays.settingsPage = DesktopSettingsPage.MAIN
     }
 
-    /** The Library's folder rows: the two folders this computer has, and Spotify once connected. */
-    val libraryLinks = remember(spotifyCanvasCookie.isNotBlank()) {
-        listOfNotNull(
-            LibraryLink(
-                item = ShelfItem(
-                    title = DesktopStrings["downloads", "Downloads"],
-                    subtitle = DesktopStrings["downloaded_songs", "Downloaded songs"],
-                    thumbnailUrl = null,
-                    videoId = null,
-                    browseId = LOCAL_DOWNLOADS_ID,
-                ),
-                icon = Icons.Rounded.Download,
-            ),
-            LibraryLink(
-                item = ShelfItem(
-                    title = DesktopStrings["local_music", "Local Music"],
-                    subtitle = DesktopStrings["d_audio_files_on_this_computer", "Audio files on this computer"],
-                    thumbnailUrl = null,
-                    videoId = null,
-                    browseId = LOCAL_MUSIC_ID,
-                ),
-                icon = Icons.Rounded.Folder,
-            ),
-            // As on the phone, only while signed in to Spotify in Account & integrations.
-            LibraryLink(
-                item = ShelfItem(
-                    title = SPOTIFY_SHELF,
-                    subtitle = DesktopStrings["spotify_library_subtitle", "Your playlists and Liked Songs"],
-                    thumbnailUrl = null,
-                    videoId = null,
-                    browseId = SPOTIFY_LIBRARY_ID,
-                ),
-                icon = Icons.Rounded.Cloud,
-                logo = SharedRes.drawable.spotify_logo,
-            ).takeIf { spotifyCanvasCookie.isNotBlank() },
-        )
-    }
-
     /** The Spotify account's playlists, as a Library grid; Liked Songs first, as on the phone. */
     fun openSpotifyLibrary() {
         libraryShowAll = HomeShelf(SPOTIFY_SHELF, emptyList())
@@ -2731,23 +2700,6 @@ fun ChordWaveDesktopApp() {
                     DesktopTrackLog.log("spotify: playlists failed: ${it.message}")
                     spotifyLibraryStatus = "Could not load your Spotify playlists: ${it.message}"
                 }
-        }
-    }
-
-    /**
-     * The Library's "On device" shelf: the playlists kept on this computer rather than on the
-     * account — the desktop's counterpart of the phone's downloaded releases, and like them
-     * reachable from nowhere else.
-     */
-    val libraryDeviceItems = remember(playlists) {
-        playlists.map { playlist ->
-            ShelfItem(
-                title = playlist.title,
-                subtitle = "Playlist • ${playlist.songs.size} songs",
-                thumbnailUrl = playlist.songs.firstOrNull()?.thumbnailUrl,
-                videoId = null,
-                browseId = LOCAL_PLAYLIST_PREFIX + playlist.id,
-            )
         }
     }
 
@@ -3605,32 +3557,6 @@ fun ChordWaveDesktopApp() {
                 topBar = { compact ->
                     DesktopTopBar(
                         compact = compact,
-                        song = selectedSong,
-                        isPlaying = playback.isPlaying,
-                        isLoading = playback.isLoading,
-                        previousEnabled = liveQueue.hasPrevious ||
-                            playback.positionMs > BACK_RESTARTS_AFTER_MS,
-                        progress = if (playback.durationMs > 0L) {
-                            playback.positionMs.toFloat() / playback.durationMs.toFloat()
-                        } else {
-                            0f
-                        },
-                        volume = playback.volume,
-                        shuffle = shuffle,
-                        repeatMode = repeatMode,
-                        onPlayPause = { if (selectedSong != null) togglePlayPauseFromUser() },
-                        onPrevious = ::playPrevious,
-                        onNext = ::playNext,
-                        onShuffleChange = ::setShuffle,
-                        onRepeatModeChange = {
-                            repeatMode = it
-                            persistence.saveString("repeat_mode", it.name)
-                        },
-                        onOpenNowPlaying = { overlays.nowPlaying = true },
-                        onVolumeChange = {
-                            volume = it
-                            persistence.saveString("volume", it.toString())
-                        },
                         onOpenAudioOutput = { overlays.audioOutput = true },
                         // A second click on the same button puts the column away, as in Apple Music.
                         onOpenLyrics = { overlays.toggleSidePanel(DesktopSidePanel.LYRICS) },
@@ -3663,6 +3589,12 @@ fun ChordWaveDesktopApp() {
                         onOpenAccountPlaylist = { openShelfItem(it, PLAYLISTS_SHELF) },
                         onOpenLocalPlaylist = ::openPlaylist,
                         onOpenSettings = ::openSettings,
+                        accountName = activeAccount?.profiles?.firstOrNull { it.profileId == activeProfileId }?.name?.takeIf(String::isNotBlank)
+                            ?: activeAccount?.name?.takeIf(String::isNotBlank),
+                        accountAvatar = activeAccount?.profiles?.firstOrNull { it.profileId == activeProfileId }?.avatar?.takeIf { it.isNotBlank() }
+                            ?: activeAccount?.avatar?.takeIf { it.isNotBlank() }
+                            ?: activeAccount?.profiles?.firstOrNull()?.avatar?.takeIf { it.isNotBlank() },
+                        onOpenAccounts = { DesktopTrackLog.log("accounts: opening the switcher"); overlays.accounts = true },
                         focusSearch = searchFocusRequested,
                         onSearchFocused = { searchFocusRequested = false },
                     )
@@ -4533,16 +4465,18 @@ fun ChordWaveDesktopApp() {
                             onRefresh = ::loadHome,
                             pullState = rememberPullToRefreshState(),
                             contentPadding = sharedPagePadding,
-                            title = null,
+                            title = "Home",
                             signedIn = youtubeSignedIn,
                             onSignIn = { overlays.accounts = true },
                             onItemLongPress = { item -> if (item.videoId != null) openMenu(item.toSong()) },
                             onLoadMore = ::loadMoreHome,
                             loadingMore = homeLoadingMore,
                             recentlyPlayedLoading = homeRecentsLoading,
-                            leadHero = false,
+                            leadHero = true,
+                            currentSong = playback.song,
+                            isPlaying = playback.isPlaying,
                         )
-                        destination == DesktopDestination.EXPLORE && selectedMoodGenre != null -> Column(Modifier.fillMaxSize()) {
+                        (destination == DesktopDestination.EXPLORE || destination == DesktopDestination.RADIO) && selectedMoodGenre != null -> Column(Modifier.fillMaxSize()) {
                             MoodGenrePlaylistsScreen(
                                 title = selectedMoodGenre!!.title,
                                 state = moodGenreShelves,
@@ -4556,16 +4490,36 @@ fun ChordWaveDesktopApp() {
                                 modifier = Modifier.weight(1f),
                             )
                         }
-                        destination == DesktopDestination.EXPLORE -> ExploreScreen(
+                        destination == DesktopDestination.EXPLORE -> Column(Modifier.fillMaxSize()) {
+                            Text(
+                                text = "New",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = DesktopOnBackground,
+                                modifier = Modifier.padding(
+                                    start = PAGE_GUTTER,
+                                    end = PAGE_GUTTER,
+                                    top = 8.dp,
+                                    bottom = 14.dp,
+                                ),
+                            )
+                            ExploreScreen(
+                                state = exploreState,
+                                listState = exploreListState,
+                                onCategoryClick = ::openMoodGenre,
+                                onRetry = { exploreReloads++ },
+                                refreshing = false,
+                                onRefresh = { exploreReloads++ },
+                                pullState = rememberPullToRefreshState(),
+                                contentPadding = sharedPagePadding,
+                                modifier = Modifier.weight(1f),
+                                showTitle = false,
+                            )
+                        }
+                        destination == DesktopDestination.RADIO -> DesktopRadioPage(
                             state = exploreState,
-                            listState = exploreListState,
                             onCategoryClick = ::openMoodGenre,
                             onRetry = { exploreReloads++ },
-                            refreshing = false,
-                            onRefresh = { exploreReloads++ },
-                            pullState = rememberPullToRefreshState(),
                             contentPadding = sharedPagePadding,
-                            showTitle = false,
                         )
                         destination == DesktopDestination.SEARCH -> SearchScreen(
                             query = query,
@@ -4657,7 +4611,7 @@ fun ChordWaveDesktopApp() {
                             topPadding = 0.dp,
                             showField = false,
                         )
-                        destination == DesktopDestination.LIBRARY && libraryShowAll != null -> Column(Modifier.fillMaxSize()) {
+                        destination == DesktopDestination.PLAYLISTS && libraryShowAll != null -> Column(Modifier.fillMaxSize()) {
                             // The phone keeps the grid's sort beside it, in the bar above; here it sits
                             // at the end of the row the way back is on.
                             Row(
@@ -4683,49 +4637,59 @@ fun ChordWaveDesktopApp() {
                                     .takeIf { libraryShowAll?.title == PLAYLISTS_SHELF },
                             )
                         }
-                        destination == DesktopDestination.LIBRARY -> LibraryScreen(
+                        destination == DesktopDestination.RECENTLY_ADDED -> DesktopRecentlyAddedPage(
+                            songs = libraryUnion,
                             signedIn = youtubeSignedIn,
-                            state = libraryState,
-                            listState = libraryListState,
-                            onShelfItemClick = ::openLibraryItem,
-                            onShelfItemLongPress = { item -> if (item.videoId != null) openMenu(item.toSong()) },
-                            onNewPlaylist = { overlays.playlistDialog = true },
-                            onImportSpotifyPlaylist = { spotifyImportOpen = true },
-                            onShowAll = { shelf -> libraryShowAll = shelf },
-                            replay = {
-                                // The phone's wallet of Replay cards, or nothing until there is
-                                // listening to deal them from.
-                                val cards = remember(replaySummary) { replaySummary.heroCards() }
-                                if (!replaySummary.isEmpty && cards.isNotEmpty()) {
-                                    ShelfRow(
-                                        modifier = Modifier.padding(vertical = 6.dp),
-                                        contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                        items(cards, key = { it.label }) { card ->
-                                            ReplayCreditCard(
-                                                label = card.label,
-                                                value = card.value,
-                                                detail = card.detail,
-                                                artworkUrl = card.artworkUrl,
-                                                holder = replayHolder,
-                                                memberSince = replaySummary.memberSince(),
-                                                onClick = { overlays.replay = true },
-                                                modifier = Modifier.width(300.dp),
-                                            )
-                                        }
-                                    }
-                                }
-                            },
                             onSignIn = { overlays.accounts = true },
-                            onRetry = ::reloadLibrary,
-                            refreshing = false,
-                            onRefresh = ::reloadLibrary,
-                            pullState = rememberPullToRefreshState(),
+                            onPlaySongs = { songs, index -> playSongs(songs, index) },
                             contentPadding = sharedPagePadding,
-                            links = libraryLinks,
-                            deviceItems = libraryDeviceItems,
-                            showTitle = false,
+                        )
+                        destination == DesktopDestination.ARTISTS -> DesktopArtistsPage(
+                            songs = libraryUnion,
+                            likedIds = likedIds,
+                            onToggleLike = ::toggleLike,
+                            onPlaySongs = { songs, index -> playSongs(songs, index) },
+                            onOpenArtist = { browseId, name ->
+                                if (browseId != null) openArtist(browseId, name) else openArtistByName(name)
+                            },
+                            contentPadding = sharedPagePadding,
+                        )
+                        destination == DesktopDestination.ALBUMS -> DesktopAlbumsPage(
+                            songs = libraryUnion,
+                            likedIds = likedIds,
+                            onToggleLike = ::toggleLike,
+                            onPlaySongs = { songs, index -> playSongs(songs, index) },
+                            onOpenAlbum = ::openAlbum,
+                            contentPadding = sharedPagePadding,
+                        )
+                        destination == DesktopDestination.SONGS -> DesktopSongsTablePage(
+                            songs = libraryUnion,
+                            currentSongId = playback.song?.videoId,
+                            likedIds = likedIds,
+                            onToggleLike = ::toggleLike,
+                            onPlaySongs = { songs, index -> playSongs(songs, index) },
+                            menu = { song -> songMenu(song) },
+                            contentPadding = sharedPagePadding,
+                        )
+                        destination == DesktopDestination.MADE_FOR_YOU -> DesktopMadeForYouPage(
+                            summary = replaySummary,
+                            holder = replayHolder,
+                            onOpenReplay = { overlays.replay = true },
+                            onPlaySong = { playSong(it) },
+                            onOpenArtist = { browseId, name ->
+                                if (browseId != null) openArtist(browseId, name) else openArtistByName(name)
+                            },
+                            contentPadding = sharedPagePadding,
+                        )
+                        destination == DesktopDestination.PLAYLISTS -> DesktopPlaylistsPage(
+                            accountPlaylists = sidebarAccountPlaylists,
+                            localPlaylists = playlists,
+                            spotifyConnected = spotifyCanvasCookie.isNotBlank(),
+                            onOpenAccountPlaylist = { openShelfItem(it, PLAYLISTS_SHELF) },
+                            onOpenLocalPlaylist = ::openPlaylist,
+                            onOpenSpotifyLibrary = ::openSpotifyLibrary,
+                            onNewPlaylist = { overlays.playlistDialog = true },
+                            contentPadding = sharedPagePadding,
                         )
                         destination == DesktopDestination.HISTORY -> DesktopHistoryPage(
                             // The account's history when there is one, and what
@@ -4797,13 +4761,13 @@ private fun RemoteSuspendedScreen(message: String, onQuit: () -> Unit) {
             Text(
                 text = DesktopStrings["d_app_suspended", "ChordWave is unavailable"],
                 style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
+                color = DesktopOnBackground,
                 textAlign = TextAlign.Center,
             )
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.8f),
+                color = DesktopOnBackground.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
             )
             Button(onClick = onQuit) {
@@ -4813,24 +4777,16 @@ private fun RemoteSuspendedScreen(message: String, onQuit: () -> Unit) {
     }
 }
 
+/**
+ * The strip above the page: the mark, the one way back, and the utility row.
+ *
+ * Apple Music keeps its transport in the floating pill at the foot of the window, so this bar
+ * carries none of it — no play controls, no now-playing chip, no volume. Those all live in
+ * [DesktopCompactPlayerPill].
+ */
 @Composable
 private fun DesktopTopBar(
     compact: Boolean,
-    song: Song?,
-    isPlaying: Boolean,
-    isLoading: Boolean,
-    previousEnabled: Boolean,
-    progress: Float,
-    volume: Float,
-    shuffle: Boolean,
-    repeatMode: DesktopRepeatMode,
-    onPlayPause: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onShuffleChange: (Boolean) -> Unit,
-    onRepeatModeChange: (DesktopRepeatMode) -> Unit,
-    onOpenNowPlaying: () -> Unit,
-    onVolumeChange: (Float) -> Unit,
     onOpenAudioOutput: () -> Unit,
     onOpenLyrics: () -> Unit,
     onOpenQueue: () -> Unit,
@@ -4844,262 +4800,90 @@ private fun DesktopTopBar(
 ) {
     val titleBarEnabled by DesktopTitleBarSetting.enabled.collectAsState()
     val inlineCaption = DesktopPlatform.drawsOwnWindowFrame && !titleBarEnabled
-    // The same claim the player's scrubber runs through an Automix blend, but breathing slowly and
-    // gently rather than strobing on the beat — the desktop's calm reading of a mix.
-    val mixBlend = DesktopPlayerSettings.smartMixBlend.collectAsState()
-    val reduceAnimation by DesktopPlayerSettings.reduceAnimation.collectAsState()
-    val mixPulse = rememberMixPulse({ mixBlend.value }, enabled = !reduceAnimation, slow = true)
-    val currentProgress by rememberUpdatedState(progress)
 
-    // Apple Music uses one calm strip for both player controls and window furniture. The left
-    // sidebar owns the traffic lights; the rest is a balanced transport / now-playing / utility
-    // layout with deliberately smaller glyphs than the phone player.
     DesktopTitleBarDragArea(Modifier.fillMaxWidth().height(64.dp)) {
         Box(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-            // The window's own buttons live at the head of the sidebar; a compact window has no
-            // sidebar, so there they lead this bar instead.
-            if (compact && inlineCaption) {
-                Box(
+                // The window's own buttons live at the head of the sidebar; a compact window has no
+                // sidebar, so there they lead this bar instead.
+                if (compact && inlineCaption) {
+                    Box(
+                        Modifier
+                            .fillMaxHeight()
+                            .desktopWindowGlass(DesktopChromeEdge.BOTTOM)
+                            .padding(start = if (DesktopPlatform.isMac) 16.dp else 10.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        DesktopWindowButtons()
+                    }
+                }
+                Row(
                     Modifier
+                        .weight(1f)
                         .fillMaxHeight()
                         .desktopWindowGlass(DesktopChromeEdge.BOTTOM)
-                        .padding(start = if (DesktopPlatform.isMac) 16.dp else 10.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    DesktopWindowButtons()
-                }
-            }
-            Row(
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .desktopWindowGlass(DesktopChromeEdge.BOTTOM)
-                    .padding(start = 14.dp, end = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // The mark leads the player's own controls, now that the sidebar runs to the top.
-                Image(
-                    painter = painterResource(Res.drawable.logo_mark),
-                    contentDescription = "ChordWave",
-                    modifier = Modifier.size(width = 28.dp, height = 18.dp),
-                )
-                Spacer(Modifier.width(14.dp))
-                DesktopToolbarButton(onClick = onBack, enabled = canGoBack, size = 32.dp) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        DesktopStrings["back", "Back"],
-                        tint = if (canGoBack) Color.White else DesktopSecondary.copy(alpha = 0.40f),
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(Modifier.width(6.dp))
-                if (!compact) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        DesktopToolbarButton(onClick = { onShuffleChange(!shuffle) }, size = 32.dp) {
-                            Icon(
-                                ChordWaveIcons.Shuffle,
-                                DesktopStrings["shuffle", "Shuffle"],
-                                tint = if (shuffle) DesktopAccent else DesktopSecondary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        DesktopToolbarButton(onClick = onPrevious, enabled = previousEnabled, size = 32.dp) {
-                            Icon(
-                                Icons.Rounded.FastRewind,
-                                DesktopStrings["widget_previous", "Previous"],
-                                tint = if (previousEnabled) Color.White else DesktopSecondary.copy(alpha = 0.40f),
-                                modifier = Modifier.size(21.dp),
-                            )
-                        }
-                        DesktopToolbarButton(onClick = onPlayPause, size = 32.dp) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp,
-                                )
-                            } else {
-                                Icon(
-                                    if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                    if (isPlaying) "Pause" else "Play",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(23.dp),
-                                )
-                            }
-                        }
-                        DesktopToolbarButton(onClick = onNext, size = 32.dp) {
-                            Icon(
-                                Icons.Rounded.FastForward,
-                                DesktopStrings["widget_next", "Next"],
-                                tint = Color.White,
-                                modifier = Modifier.size(21.dp),
-                            )
-                        }
-                        DesktopToolbarButton(
-                            onClick = { onRepeatModeChange(repeatMode.next()) },
-                            size = 32.dp,
-                        ) {
-                            val tint = if (repeatMode != DesktopRepeatMode.OFF) DesktopAccent else DesktopSecondary
-                            if (repeatMode == DesktopRepeatMode.ONE) {
-                                Text(
-                                    "1",
-                                    color = tint,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.semantics { contentDescription = "Repeat one" },
-                                )
-                            } else {
-                                Icon(
-                                    ChordWaveIcons.Repeat,
-                                    "Repeat ${repeatMode.label()}",
-                                    tint = tint,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    }
-
-                    Box(
-                        Modifier.weight(1f).padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .widthIn(min = 300.dp, max = 520.dp)
-                                .fillMaxWidth()
-                                .height(46.dp)
-                                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(4.dp))
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable(onClick = onOpenNowPlaying),
-                            color = Color(0xFF323236),
-                            tonalElevation = 0.dp,
-                        ) {
-                            Box(Modifier.fillMaxSize()) {
-                                if (song == null) {
-                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            ChordWaveIcons.MusicNote,
-                                            DesktopStrings["playback_channel_name", "Now playing"],
-                                            tint = DesktopSecondary.copy(alpha = 0.65f),
-                                            modifier = Modifier.size(21.dp),
-                                        )
-                                    }
-                                } else {
-                                    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                                        DesktopArtwork(
-                                            song.thumbnailUrl,
-                                            Modifier.size(44.dp).clip(RoundedCornerShape(3.dp)),
-                                            px = ROW_ART_PX,
-                                        )
-                                        Column(
-                                            Modifier.weight(1f).padding(start = 12.dp, end = 56.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                        ) {
-                                            Text(
-                                                song.title,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = FontWeight.SemiBold,
-                                            )
-                                            Text(
-                                                song.artist,
-                                                color = DesktopSecondary,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                style = MaterialTheme.typography.labelSmall,
-                                            )
-                                        }
-                                    }
-                                    // Drawn rather than sized: through a blend the line covers
-                                    // the full width and pulses on the beat, as the player's
-                                    // scrubber does, and reading either in draw keeps the frame
-                                    // clock from recomposing the whole bar.
-                                    Box(
-                                        Modifier
-                                            .align(Alignment.BottomStart)
-                                            .padding(start = 44.dp)
-                                            .fillMaxWidth()
-                                            .height(2.dp)
-                                            .drawBehind {
-                                                val base = currentProgress.coerceIn(0f, 1f)
-                                                val fraction = base + (1f - base) * mixPulse.cover
-                                                drawRect(
-                                                    color = Color.White.copy(alpha = mixPulse.alpha(0.48f)),
-                                                    size = Size(size.width * fraction, size.height),
-                                                )
-                                            },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Spacer(Modifier.weight(1f))
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        .padding(start = 14.dp, end = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        Icons.Rounded.VolumeUp,
-                        DesktopStrings["d_volume", "Volume"],
-                        tint = DesktopSecondary,
-                        modifier = Modifier.size(17.dp),
+                    // The mark leads, now that the sidebar runs to the top.
+                    Image(
+                        painter = painterResource(Res.drawable.logo_mark),
+                        contentDescription = "ChordWave",
+                        modifier = Modifier.size(width = 28.dp, height = 18.dp),
                     )
-                    Spacer(Modifier.width(8.dp))
-                    DesktopThinSlider(
-                        value = volume,
-                        onValueChange = onVolumeChange,
-                        idleHeight = 4.dp,
-                        activeHeight = 8.dp,
-                        modifier = Modifier.width(78.dp),
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    DesktopToolbarButton(onClick = onOpenAudioOutput, size = 32.dp) {
+                    Spacer(Modifier.width(14.dp))
+                    DesktopToolbarButton(onClick = onBack, enabled = canGoBack, size = 32.dp) {
                         Icon(
-                            Icons.Rounded.Headphones,
-                            DesktopStrings["audio_output", "Audio output"],
-                            tint = DesktopSecondary,
-                            modifier = Modifier.size(19.dp),
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            DesktopStrings["back", "Back"],
+                            tint = if (canGoBack) DesktopOnBackground else DesktopSecondary.copy(alpha = 0.40f),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
-                    DesktopToolbarButton(onClick = onOpenLyrics, size = 32.dp) {
-                        Icon(
-                            ChordWaveIcons.LyricsQuote,
-                            DesktopStrings["lyrics", "Lyrics"],
-                            tint = if (sidePanel == DesktopSidePanel.LYRICS) Color.White else DesktopSecondary,
-                            modifier = Modifier.size(19.dp),
-                        )
-                    }
-                    DesktopToolbarButton(onClick = onOpenQueue, size = 32.dp) {
-                        Icon(
-                            ChordWaveIcons.Queue,
-                            DesktopStrings["queue", "Queue"],
-                            tint = if (sidePanel == DesktopSidePanel.QUEUE) Color.White else DesktopSecondary,
-                            modifier = Modifier.size(19.dp),
-                        )
-                    }
-                    val windowActions = LocalDesktopWindowActions.current
-                    DesktopToolbarButton(
-                        onClick = { windowActions?.toggleMiniPlayer?.invoke() },
-                        size = 32.dp,
+                    Spacer(Modifier.weight(1f))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            Icons.Rounded.OpenInFull,
-                            "MiniPlayer",
-                            tint = DesktopSecondary,
-                            modifier = Modifier.size(17.dp),
-                        )
+                        DesktopToolbarButton(onClick = onOpenAudioOutput, size = 32.dp) {
+                            Icon(
+                                Icons.Rounded.Headphones,
+                                DesktopStrings["audio_output", "Audio output"],
+                                tint = DesktopSecondary,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                        DesktopToolbarButton(onClick = onOpenLyrics, size = 32.dp) {
+                            Icon(
+                                ChordWaveIcons.LyricsQuote,
+                                DesktopStrings["lyrics", "Lyrics"],
+                                tint = if (sidePanel == DesktopSidePanel.LYRICS) DesktopAccent else DesktopSecondary,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                        DesktopToolbarButton(onClick = onOpenQueue, size = 32.dp) {
+                            Icon(
+                                ChordWaveIcons.Queue,
+                                DesktopStrings["queue", "Queue"],
+                                tint = if (sidePanel == DesktopSidePanel.QUEUE) DesktopAccent else DesktopSecondary,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                        val windowActions = LocalDesktopWindowActions.current
+                        DesktopToolbarButton(
+                            onClick = { windowActions?.toggleMiniPlayer?.invoke() },
+                            size = 32.dp,
+                        ) {
+                            Icon(
+                                Icons.Rounded.OpenInFull,
+                                "MiniPlayer",
+                                tint = DesktopSecondary,
+                                modifier = Modifier.size(17.dp),
+                            )
+                        }
+                        DesktopAccountButton(avatar = accountAvatar, onClick = onOpenAccounts)
                     }
-                    DesktopAccountButton(avatar = accountAvatar, onClick = onOpenAccounts)
                 }
-            }
             }
             HorizontalDivider(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
@@ -5132,6 +4916,10 @@ internal fun DesktopToolbarButton(
     }
 }
 
+/**
+ * The Apple Music sidebar: search field, navigate, Library, ChordWave, Playlists, and the
+ * listener's own row at the foot. A chosen row is a pale pill with red ink, as in the reference.
+ */
 @Composable
 private fun DesktopSidebar(
     destination: DesktopDestination,
@@ -5146,6 +4934,9 @@ private fun DesktopSidebar(
     onOpenAccountPlaylist: (ShelfItem) -> Unit,
     onOpenLocalPlaylist: (DesktopPlaylist) -> Unit,
     onOpenSettings: () -> Unit,
+    accountName: String?,
+    accountAvatar: String?,
+    onOpenAccounts: () -> Unit,
     /** Search was picked: the sidebar's box is the page's field, so it takes the focus. */
     focusSearch: Boolean,
     onSearchFocused: () -> Unit,
@@ -5208,25 +4999,41 @@ private fun DesktopSidebar(
                 focusRequester = searchFocusRequester,
                 onFocusChanged = { searchFocused = it },
             )
-            Spacer(Modifier.height(20.dp))
-            DesktopSidebarItem(ChordWaveIcons.Home, DesktopStrings["home", "Home"], destination == DesktopDestination.LISTEN_NOW) {
-                onDestinationSelected(DesktopDestination.LISTEN_NOW)
-            }
-            DesktopSidebarItem(ChordWaveIcons.Explore, "Explore", destination == DesktopDestination.EXPLORE) {
-                onDestinationSelected(DesktopDestination.EXPLORE)
-            }
-            DesktopSidebarItem(ChordWaveIcons.Library, "Library", destination == DesktopDestination.LIBRARY) {
-                onDestinationSelected(DesktopDestination.LIBRARY)
-            }
+            Spacer(Modifier.height(16.dp))
             DesktopSidebarItem(ChordWaveIcons.Search, "Search", destination == DesktopDestination.SEARCH) {
                 onDestinationSelected(DesktopDestination.SEARCH)
             }
-            Spacer(Modifier.height(6.dp))
-            HorizontalDivider(color = desktopChromeDivider())
-            Spacer(Modifier.height(12.dp))
+            DesktopSidebarItem(ChordWaveIcons.Home, DesktopStrings["home", "Home"], destination == DesktopDestination.LISTEN_NOW) {
+                onDestinationSelected(DesktopDestination.LISTEN_NOW)
+            }
+            DesktopSidebarItem(ChordWaveIcons.Explore, "New", destination == DesktopDestination.EXPLORE) {
+                onDestinationSelected(DesktopDestination.EXPLORE)
+            }
+            DesktopSidebarItem(Icons.Rounded.Radio, "Radio", destination == DesktopDestination.RADIO) {
+                onDestinationSelected(DesktopDestination.RADIO)
+            }
+            Spacer(Modifier.height(14.dp))
+            DesktopSidebarSection("Library")
+            DesktopSidebarItem(ChordWaveIcons.Clock, "Recently Added", destination == DesktopDestination.RECENTLY_ADDED) {
+                onDestinationSelected(DesktopDestination.RECENTLY_ADDED)
+            }
+            DesktopSidebarItem(Icons.Rounded.Mic, "Artists", destination == DesktopDestination.ARTISTS) {
+                onDestinationSelected(DesktopDestination.ARTISTS)
+            }
+            DesktopSidebarItem(Icons.Rounded.Album, "Albums", destination == DesktopDestination.ALBUMS) {
+                onDestinationSelected(DesktopDestination.ALBUMS)
+            }
+            DesktopSidebarItem(ChordWaveIcons.MusicNote, "Songs", destination == DesktopDestination.SONGS) {
+                onDestinationSelected(DesktopDestination.SONGS)
+            }
+            DesktopSidebarItem(Icons.Rounded.AccountCircle, "Made for You", destination == DesktopDestination.MADE_FOR_YOU) {
+                onDestinationSelected(DesktopDestination.MADE_FOR_YOU)
+            }
+            Spacer(Modifier.height(14.dp))
+            DesktopSidebarSection("ChordWave")
             if (HISTORY_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
-                    ChordWaveIcons.Clock,
+                    Icons.Rounded.History,
                     "History",
                     destination == DesktopDestination.HISTORY,
                     onClick = { onDestinationSelected(DesktopDestination.HISTORY) },
@@ -5245,16 +5052,18 @@ private fun DesktopSidebar(
             }
             if (LOCAL_MUSIC_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
-                    ChordWaveIcons.Library,
+                    Icons.Rounded.Folder,
                     "Local Music",
                     destination == DesktopDestination.LOCAL_MUSIC,
                     onClick = { onDestinationSelected(DesktopDestination.LOCAL_MUSIC) },
                     onHide = { DesktopSidebarVisibility.hide(LOCAL_MUSIC_KEY, "Local Music") },
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            HorizontalDivider(color = desktopChromeDivider())
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
+            DesktopSidebarSection("Playlists")
+            DesktopSidebarItem(ChordWaveIcons.GridView, "All Playlists", destination == DesktopDestination.PLAYLISTS) {
+                onDestinationSelected(DesktopDestination.PLAYLISTS)
+            }
             val visibleAccount = accountPlaylists.filterNot { "account:${it.browseId}" in hiddenSidebar }
             val visibleLocal = localPlaylists.filterNot { "local:${it.id}" in hiddenSidebar }
             LazyColumn(
@@ -5278,7 +5087,9 @@ private fun DesktopSidebar(
                         playlist.title,
                         openedCollectionId == playlist.id,
                         onClick = { onOpenLocalPlaylist(playlist) },
-                        onHide = { DesktopSidebarVisibility.hide("local:${playlist.id}", playlist.title) },
+                        onHide = {
+                            DesktopSidebarVisibility.hide("local:${playlist.id}", playlist.title)
+                        },
                     )
                 }
                 if (visibleAccount.isEmpty() && visibleLocal.isEmpty()) {
@@ -5297,6 +5108,11 @@ private fun DesktopSidebar(
             if (hiddenSidebar.isNotEmpty()) {
                 DesktopSidebarRestoreRow(hiddenSidebar)
             }
+            DesktopSidebarAccountRow(
+                name = accountName,
+                avatar = accountAvatar,
+                onClick = onOpenAccounts,
+            )
             DesktopSidebarItem(Icons.Rounded.Settings, "Settings", settingsOpen) {
                 onOpenSettings()
             }
@@ -5308,6 +5124,67 @@ private fun DesktopSidebar(
                 .width(1.dp)
                 .fillMaxHeight()
                 .background(desktopChromeDivider()),
+        )
+    }
+}
+
+/** A sidebar group heading — "Library", "Playlists" — small and grey, as in the reference. */
+@Composable
+private fun DesktopSidebarSection(title: String) {
+    Text(
+        title,
+        color = DesktopSecondary,
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.padding(start = 9.dp, bottom = 6.dp),
+    )
+}
+
+/** The listener's own row at the foot of the sidebar: photo and name, or an invitation to sign in. */
+@Composable
+private fun DesktopSidebarAccountRow(
+    name: String?,
+    avatar: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .desktopHoverFill()
+            .clip(RoundedCornerShape(7.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (avatar != null) {
+            DesktopArtwork(
+                avatar,
+                Modifier.size(28.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                px = 96,
+            )
+        } else {
+            Box(
+                Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.06f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Rounded.Person,
+                    null,
+                    tint = DesktopSecondary,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            name?.takeIf { it.isNotBlank() } ?: "Sign In",
+            color = DesktopOnBackground,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -5328,7 +5205,7 @@ private fun DesktopSidebarItem(
                 .fillMaxWidth()
                 .desktopHoverFill()
                 .clip(RoundedCornerShape(7.dp))
-                .background(if (selected) Color.White.copy(alpha = 0.12f) else Color.Transparent)
+                .background(if (selected) Color.Black.copy(alpha = 0.06f) else Color.Transparent)
                 .clickable(onClick = onClick)
                 .then(
                     if (onHide == null) Modifier
@@ -5347,12 +5224,13 @@ private fun DesktopSidebarItem(
                 .padding(horizontal = 9.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, label, tint = if (selected) DesktopAccent else DesktopSecondary, modifier = Modifier.size(18.dp))
+            Icon(icon, label, tint = if (selected) DesktopAccent else DesktopOnBackground, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(10.dp))
             Text(
                 label,
-                color = if (selected) Color.White else DesktopSecondary,
+                color = if (selected) DesktopAccent else DesktopOnBackground,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -5472,12 +5350,12 @@ private fun DesktopFloatingNavigation(
     val tabs = remember {
         listOf(
             DesktopDestination.LISTEN_NOW to (ChordWaveIcons.Play to "Play"),
-            DesktopDestination.EXPLORE to (ChordWaveIcons.Explore to "Explore"),
-            DesktopDestination.LIBRARY to (ChordWaveIcons.Library to "Library"),
+            DesktopDestination.EXPLORE to (ChordWaveIcons.Explore to "New"),
+            DesktopDestination.PLAYLISTS to (ChordWaveIcons.Library to "Playlists"),
             DesktopDestination.SEARCH to (ChordWaveIcons.Search to "Search"),
         )
     }
-    val selected = tabs.firstOrNull { it.first == destination }?.first ?: DesktopDestination.LIBRARY
+    val selected = tabs.firstOrNull { it.first == destination }?.first ?: DesktopDestination.PLAYLISTS
     val selectedIndex = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0)
     val trackShape = RoundedCornerShape(percent = 50)
     val bubbleShape = RoundedCornerShape(percent = 50)
@@ -5510,10 +5388,10 @@ private fun DesktopFloatingNavigation(
                             blurEnabled = true
                             blurRadius = 26.dp
                             noiseFactor = 0.04f
-                            tints = listOf(HazeTint(Color(0x3514141E)))
+                            tints = listOf(HazeTint(Color(0x99FFFFFF)))
                         }
                     } else {
-                        Modifier.background(Color(0x751E1E28))
+                        Modifier.background(Color(0xE8FFFFFF))
                     },
                 )
                 .background(
@@ -5701,7 +5579,7 @@ private fun DesktopFloatingNavigation(
                     } else 0f
 
                     val contentTint by animateColorAsState(
-                        targetValue = if (isSelected) Color.White else Color.White.copy(alpha = 0.65f),
+                        targetValue = if (isSelected) DesktopAccent else DesktopOnBackground.copy(alpha = 0.65f),
                         label = "tabContentTint",
                     )
 
@@ -5842,10 +5720,10 @@ private fun DesktopCompactPlayerPill(
                         blurEnabled = true
                         blurRadius = 26.dp
                         noiseFactor = 0.04f
-                        tints = listOf(HazeTint(Color(0x3514141E)))
+                        tints = listOf(HazeTint(Color(0x99FFFFFF)))
                     }
                 } else {
-                    Modifier.background(Color(0x751E1E28))
+                    Modifier.background(Color(0xE8FFFFFF))
                 },
             )
             .background(
@@ -6011,8 +5889,8 @@ internal fun DesktopSearchField(
             .fillMaxWidth()
             .height(36.dp)
             .clip(searchShape)
-            .background(Color.White.copy(alpha = 0.07f))
-            .border(1.dp, Color.White.copy(alpha = 0.10f), searchShape)
+            .background(Color.Black.copy(alpha = 0.06f))
+            .border(1.dp, Color.Black.copy(alpha = 0.08f), searchShape)
             .clickable { focusRequester.requestFocus() }
             .padding(horizontal = 9.dp),
         contentAlignment = Alignment.CenterStart,
@@ -6033,7 +5911,7 @@ internal fun DesktopSearchField(
                     }
                 },
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = DesktopOnBackground),
             cursorBrush = SolidColor(DesktopAccent),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
@@ -6425,14 +6303,14 @@ private fun DesktopStatChip(icon: androidx.compose.ui.graphics.vector.ImageVecto
     Row(
         Modifier
             .clip(CircleShape)
-            .background(DesktopGlass.copy(alpha = 0.55f))
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), CircleShape)
+            .background(Color.Black.copy(alpha = 0.05f))
+            .border(0.5.dp, Color.Black.copy(alpha = 0.08f), CircleShape)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, null, tint = DesktopSecondary, modifier = Modifier.size(15.dp))
         Spacer(Modifier.width(7.dp))
-        Text(text, style = MaterialTheme.typography.bodySmall, color = Color.White)
+        Text(text, style = MaterialTheme.typography.bodySmall, color = DesktopOnBackground)
     }
 }
 
@@ -8180,7 +8058,7 @@ private fun DesktopCollectionSongRow(
             .alpha(if (song.isMatchMissing) 0.45f else 1f)
             .contextClick(if (unresolved) null else ({ openContextMenu(song) }))
             .clip(RoundedCornerShape(6.dp))
-            .background(if (striped) Color.White.copy(alpha = 0.04f) else Color.Transparent)
+            .background(if (striped) Color.Black.copy(alpha = 0.03f) else Color.Transparent)
             .desktopHoverFill(corner = 6.dp)
             .clickable(enabled = !unresolved) { onClick(song) }
             .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -8208,7 +8086,7 @@ private fun DesktopCollectionSongRow(
         Text(
             song.title,
             Modifier.weight(0.42f),
-            color = if (nowPlaying) Color.White else Color.White.copy(alpha = 0.75f),
+            color = if (nowPlaying) DesktopAccent else DesktopOnBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             fontWeight = FontWeight.Medium,
@@ -8625,7 +8503,7 @@ private fun DesktopShelfCard(item: ShelfItem, onClick: (ShelfItem) -> Unit) {
                 .size(width)
                 .clip(shape)
                 .background(DesktopGlass)
-                .border(1.dp, Color.White.copy(alpha = 0.12f), shape),
+                .border(1.dp, Color.Black.copy(alpha = 0.08f), shape),
         ) {
             DesktopArtwork(item.thumbnailUrl, Modifier.fillMaxSize())
         }
@@ -8636,7 +8514,7 @@ private fun DesktopShelfCard(item: ShelfItem, onClick: (ShelfItem) -> Unit) {
 }
 
 @Composable
-private fun DesktopSongRow(
+internal fun DesktopSongRow(
     song: Song,
     /** From the list's [rememberPlayingRowMatcher]; null falls back to the name rule. */
     isCurrent: Boolean? = null,
@@ -8685,7 +8563,7 @@ private fun DesktopSongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Medium,
-                color = if (isCurrent ?: song.isNowPlaying()) Color.White else Color.White.copy(alpha = 0.75f),
+                color = if (isCurrent ?: song.isNowPlaying()) DesktopAccent else DesktopOnBackground,
             )
             Text(listOfNotNull(song.artist.takeIf(String::isNotBlank), song.durationText).joinToString(" · "), color = DesktopSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
@@ -8732,7 +8610,7 @@ private fun DesktopSongRow(
 
 /** A page's box, inset from the shell's chrome. */
 @Composable
-private fun DesktopPageScaffold(contentPadding: PaddingValues, content: @Composable () -> Unit) {
+internal fun DesktopPageScaffold(contentPadding: PaddingValues, content: @Composable () -> Unit) {
     val direction = LocalLayoutDirection.current
     Box(
         Modifier.fillMaxSize().padding(
@@ -8751,7 +8629,7 @@ private fun DesktopPageScaffold(contentPadding: PaddingValues, content: @Composa
 
 /** A scrollable's own padding, plus room to clear whatever floats over the page. */
 @Composable
-private fun pagePadding(
+internal fun pagePadding(
     start: Dp = 0.dp,
     top: Dp = 0.dp,
     end: Dp = 0.dp,
@@ -8764,7 +8642,7 @@ private fun pagePadding(
 )
 
 @Composable
-private fun SectionTitle(
+internal fun SectionTitle(
     title: String,
     subtitle: String = "",
     gutter: Dp = DesktopPageGutter,
@@ -8781,7 +8659,7 @@ private fun SectionTitle(
 }
 
 @Composable
-private fun DesktopLoadingPage(label: String) {
+internal fun DesktopLoadingPage(label: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = DesktopAccent)
@@ -8792,12 +8670,12 @@ private fun DesktopLoadingPage(label: String) {
 }
 
 @Composable
-private fun DesktopErrorPage(message: String, onRetry: () -> Unit) {
+internal fun DesktopErrorPage(message: String, onRetry: () -> Unit) {
     DesktopEmptyPage(Icons.Rounded.Tune, "Something went wrong", message, onRetry, "Try again")
 }
 
 @Composable
-private fun DesktopEmptyPage(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, message: String, onAction: (() -> Unit)? = null, actionLabel: String? = null) {
+internal fun DesktopEmptyPage(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, message: String, onAction: (() -> Unit)? = null, actionLabel: String? = null) {
     Column(Modifier.fillMaxWidth().padding(56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, null, tint = DesktopAccent, modifier = Modifier.size(42.dp))
         Spacer(Modifier.height(14.dp))
@@ -8907,9 +8785,9 @@ internal fun DesktopBareSlider(
     onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val colors = SliderDefaults.colors(
-        thumbColor = Color.White,
-        activeTrackColor = Color.White,
-        inactiveTrackColor = Color.White.copy(alpha = 0.24f),
+        thumbColor = DesktopOnBackground,
+        activeTrackColor = DesktopOnBackground,
+        inactiveTrackColor = Color.Black.copy(alpha = 0.24f),
     )
     Slider(
         value = value,
@@ -8965,7 +8843,7 @@ private fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(34.dp).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.08f)),
+            Modifier.size(34.dp).clip(RoundedCornerShape(9.dp)).background(Color.Black.copy(alpha = 0.06f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = DesktopAccent, modifier = Modifier.size(19.dp))
@@ -8983,16 +8861,16 @@ private fun SettingsRow(
 }
 
 @Composable
-private fun DesktopActionButton(
+internal fun DesktopActionButton(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     Row(modifier.clip(CircleShape).background(DesktopAccent).clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Color.Black, modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        Text(label, color = Color.Black, fontWeight = FontWeight.SemiBold)
+        Text(label, color = Color.White, fontWeight = FontWeight.SemiBold)
     }
 }
 
