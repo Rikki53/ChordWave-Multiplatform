@@ -3,6 +3,7 @@ package com.music.bitchord.desktop
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -11,9 +12,19 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +34,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -45,6 +58,9 @@ import kotlinx.coroutines.launch
 internal fun DesktopPlayerSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
+    /** The volume pill at the top-right; absent when the caller has no volume to offer. */
+    volume: Float? = null,
+    onVolumeChange: ((Float) -> Unit)? = null,
     content: @Composable BoxScope.(windowWidth: Dp, windowHeight: Dp) -> Unit,
 ) {
     // Mounted while it animates out, so the slide down is seen.
@@ -101,6 +117,48 @@ internal fun DesktopPlayerSheet(
                         onClick = onDismiss,
                     ),
             )
+            // Apple Music's corner controls: the close cross on the left, the
+            // volume pill on the right. Both sit clear of the centred handle.
+            Box(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = DesktopStrings["close", "Close"],
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            if (volume != null && onVolumeChange != null) {
+                Row(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(Color.Black.copy(alpha = 0.35f))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.VolumeUp,
+                        contentDescription = DesktopStrings["volume", "Volume"],
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    DesktopThinSlider(
+                        value = volume,
+                        onValueChange = onVolumeChange,
+                        modifier = Modifier.width(100.dp),
+                    )
+                }
+            }
         }
     }
 }

@@ -92,7 +92,7 @@ private fun OutputRow(name: String, description: String, chosen: Boolean, onClic
         }
         if (chosen) {
             Spacer(Modifier.width(10.dp))
-            Icon(ChordWaveIcons.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
+            Icon(ChordWaveIcons.Check, null, tint = DesktopOnBackground, modifier = Modifier.size(18.dp))
         }
     }
 }

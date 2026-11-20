@@ -2,6 +2,7 @@ package com.music.bitchord.ui.player
 
 import com.music.bitchord.sharedui.resources.*
 import com.music.bitchord.ui.components.ExplicitSongTitle
+import com.music.bitchord.ui.components.PlayingAccent
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -227,6 +228,8 @@ internal fun InlineQueue(
     onRemove: (Int) -> Unit,
     onMove: (Int, Int) -> Unit,
     onClear: () -> Unit,
+    /** The AutoPlay pill at the head of the panel; absent where there is no toggle to offer. */
+    onToggleAutoplay: (() -> Unit)? = null,
     onScrollingChange: (Boolean) -> Unit = {},
     onDragActiveChange: (Boolean) -> Unit = {},
     /** Phone only: let queue scrolling dismiss/restore the lower half player. */
@@ -306,6 +309,32 @@ internal fun InlineQueue(
                 color = Color.White,
                 modifier = Modifier.weight(1f),
             )
+            if (onToggleAutoplay != null) {
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(
+                            if (autoplayEnabled) PlayingAccent else Color.White.copy(alpha = 0.12f),
+                        )
+                        .clickable(onClick = onToggleAutoplay)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        ChordWaveIcons.Infinity,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(Res.string.autoplay),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+            }
             if (tracks.user.isNotEmpty()) {
                 QueueClearButton(MaterialTheme.typography.titleMedium, controlsLocked, onClear)
             }

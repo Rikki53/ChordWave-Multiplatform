@@ -574,7 +574,7 @@ private fun Stepper(label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.size(32.dp).clip(CircleShape).background(DesktopCardInsetFill).clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Text(label, color = if (enabled) Color.White else DesktopSecondary) }
+    ) { Text(label, color = if (enabled) DesktopOnBackground else DesktopSecondary) }
 }
 
 @Composable

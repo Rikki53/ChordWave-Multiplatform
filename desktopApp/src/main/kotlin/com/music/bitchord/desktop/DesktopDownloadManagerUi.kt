@@ -54,7 +54,7 @@ internal fun DesktopDownloadManagerDialog(onDismiss: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(DesktopStrings["downloads", "Downloads"], style = MaterialTheme.typography.titleLarge, color = Color.White)
+                Text(DesktopStrings["downloads", "Downloads"], style = MaterialTheme.typography.titleLarge, color = DesktopOnBackground)
                 Text(
                     summary(items.size, failed, busy),
                     style = MaterialTheme.typography.bodyMedium,
@@ -87,7 +87,7 @@ internal fun DesktopDownloadManagerDialog(onDismiss: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = onDismiss) { Text(DesktopStrings["done", "Done"], color = Color.White) }
+            TextButton(onClick = onDismiss) { Text(DesktopStrings["done", "Done"], color = DesktopAccent) }
         }
     }
 }
@@ -108,7 +108,7 @@ private fun DownloadRow(item: DesktopDownloadItem) {
             Text(
                 item.song.title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White,
+                color = DesktopOnBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -141,13 +141,13 @@ private fun DownloadRow(item: DesktopDownloadItem) {
                             progress = { state.fraction },
                             modifier = Modifier.fillMaxWidth().height(3.dp),
                             color = DesktopAccent,
-                            trackColor = Color.White.copy(alpha = 0.15f),
+                            trackColor = Color.Black.copy(alpha = 0.15f),
                         )
                     } else {
                         LinearProgressIndicator(
                             modifier = Modifier.fillMaxWidth().height(3.dp),
                             color = DesktopAccent,
-                            trackColor = Color.White.copy(alpha = 0.15f),
+                            trackColor = Color.Black.copy(alpha = 0.15f),
                         )
                     }
                 }

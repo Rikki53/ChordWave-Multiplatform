@@ -3713,6 +3713,11 @@ fun ChordWaveDesktopApp() {
                             DesktopWindowMode.exit()
                             overlays.nowPlaying = false
                         },
+                        volume = volume,
+                        onVolumeChange = {
+                            volume = it
+                            persistence.saveString("volume", it.toString())
+                        },
                     ) { windowWidth, windowHeight ->
                         val current = selectedSong ?: return@DesktopPlayerSheet
                         val playerSong = trackLinks?.takeIf { it.videoId == current.videoId }

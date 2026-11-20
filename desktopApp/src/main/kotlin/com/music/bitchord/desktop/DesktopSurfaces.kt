@@ -31,16 +31,16 @@ import androidx.compose.ui.unit.dp
 // The look every modal card in the app shares.
 
 /** The card fill. */
-internal val DesktopCardFill = Color(0xFA1A1A1D)
+internal val DesktopCardFill = Color(0xFAFFFFFF)
 
 /** A block inside a card — a settings group — lifted just off the fill. */
-internal val DesktopCardInsetFill = Color(0x14FFFFFF)
+internal val DesktopCardInsetFill = Color(0x0A000000)
 
 /** The hairline that bounds a card, and separates one row from the next. */
-internal val DesktopCardEdge = Color(0x1FFFFFFF)
+internal val DesktopCardEdge = Color(0x14000000)
 
 /** What a row reads at while the pointer is on it. */
-internal val DesktopRowHover = Color(0x1AFFFFFF)
+internal val DesktopRowHover = Color(0x0A000000)
 
 /** The scrim a modal card sits on. */
 internal val DesktopScrim = Color(0x8C000000)

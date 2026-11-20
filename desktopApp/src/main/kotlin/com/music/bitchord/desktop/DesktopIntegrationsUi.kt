@@ -294,7 +294,7 @@ private fun DialogHeading(title: String, message: String, isError: Boolean = fal
             title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            color = DesktopOnBackground,
         )
         Text(
             message,
@@ -431,7 +431,7 @@ internal fun DesktopSpotifyImportDialog(
                         .padding(horizontal = panelInset(22.dp))
                         .heightIn(max = 200.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
+                        .background(Color.Black.copy(alpha = 0.06f))
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -472,7 +472,7 @@ private fun DialogField(
             .fillMaxWidth()
             .padding(horizontal = panelInset(22.dp))
             .clip(RoundedCornerShape(11.dp))
-            .background(Color.White.copy(alpha = if (enabled) 0.08f else 0.04f))
+            .background(Color.Black.copy(alpha = if (enabled) 0.08f else 0.04f))
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -485,7 +485,7 @@ private fun DialogField(
                 onValueChange = onValueChange,
                 enabled = enabled,
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = DesktopOnBackground),
                 cursorBrush = SolidColor(DesktopAccent),
                 visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
                 keyboardOptions = KeyboardOptions(imeAction = imeAction),
