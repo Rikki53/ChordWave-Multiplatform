@@ -165,6 +165,13 @@ import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -3605,10 +3612,34 @@ fun ChordWaveDesktopApp() {
                         destination = destination,
                         song = selectedSong,
                         isPlaying = playback.isPlaying,
+                        progress = if (playback.durationMs > 0) {
+                            (playerPosition.positionMs.toFloat() / playback.durationMs).coerceIn(0f, 1f)
+                        } else {
+                            0f
+                        },
+                        shuffle = shuffle,
+                        repeatMode = repeatMode,
+                        volume = volume,
+                        isLiked = selectedSong?.videoId in likedIds,
+                        sidePanel = overlays.sidePanel,
                         onDestinationSelected = ::selectDestination,
                         onExpand = { overlays.nowPlaying = true },
                         onPlayPause = { if (selectedSong != null) togglePlayPauseFromUser() },
                         onNext = ::playNext,
+                        onPrevious = ::playPrevious,
+                        onToggleShuffle = { setShuffle(!shuffle) },
+                        onCycleRepeat = {
+                            repeatMode = repeatMode.next()
+                            persistence.saveString("repeat_mode", repeatMode.name)
+                        },
+                        onToggleLike = { selectedSong?.let { toggleLike(it) } },
+                        onOpenLyrics = { overlays.toggleSidePanel(DesktopSidePanel.LYRICS) },
+                        onOpenQueue = { overlays.toggleSidePanel(DesktopSidePanel.QUEUE) },
+                        onVolumeChange = {
+                            volume = it
+                            persistence.saveString("volume", it.toString())
+                        },
+                        onOpenMenu = ::openMenu,
                     )
                 },
                 trailing = {
@@ -4521,7 +4552,19 @@ fun ChordWaveDesktopApp() {
                             onRetry = { exploreReloads++ },
                             contentPadding = sharedPagePadding,
                         )
-                        destination == DesktopDestination.SEARCH -> SearchScreen(
+                        destination == DesktopDestination.SEARCH -> Column(Modifier.fillMaxSize()) {
+                            Text(
+                                text = "Search",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = DesktopOnBackground,
+                                modifier = Modifier.padding(
+                                    start = PAGE_GUTTER,
+                                    end = PAGE_GUTTER,
+                                    top = 8.dp,
+                                    bottom = 14.dp,
+                                ),
+                            )
+                            SearchScreen(
                             query = query,
                             onQueryChange = ::editQuery,
                             filter = searchFilter,
@@ -4610,7 +4653,17 @@ fun ChordWaveDesktopApp() {
                             contentPadding = sharedPagePadding,
                             topPadding = 0.dp,
                             showField = false,
+                            modifier = Modifier.weight(1f),
+                            browseCategories = (exploreState as? UiState.Success)?.data
+                                ?.flatMap { it.items }
+                                ?.distinctBy { it.browseId to it.params }
+                                .orEmpty(),
+                            onBrowseCategoryClick = { item ->
+                                selectDestination(DesktopDestination.EXPLORE)
+                                openMoodGenre(item)
+                            },
                         )
+                        }
                         destination == DesktopDestination.PLAYLISTS && libraryShowAll != null -> Column(Modifier.fillMaxSize()) {
                             // The phone keeps the grid's sort beside it, in the bar above; here it sits
                             // at the end of the row the way back is on.
@@ -5311,17 +5364,35 @@ private fun DesktopSidebarRestoreRow(hidden: Map<String, String>) {
 }
 
 @Composable
+/**
+ * The floating chrome at the foot of the window: the player pill, always, and the tab
+ * navigation under it in compact mode, where there is no sidebar.
+ */
+@Composable
 private fun DesktopBottomChrome(
     compact: Boolean,
     destination: DesktopDestination,
     song: Song?,
     isPlaying: Boolean,
+    progress: Float,
+    shuffle: Boolean,
+    repeatMode: DesktopRepeatMode,
+    volume: Float,
+    isLiked: Boolean,
+    sidePanel: DesktopSidePanel?,
     onDestinationSelected: (DesktopDestination) -> Unit,
     onExpand: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    onToggleLike: () -> Unit,
+    onOpenLyrics: () -> Unit,
+    onOpenQueue: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onOpenMenu: (Song) -> Unit,
 ) {
-    if (!compact) return
     Column(
         Modifier
             .fillMaxWidth()
@@ -5329,16 +5400,29 @@ private fun DesktopBottomChrome(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (song != null) {
-            DesktopCompactPlayerPill(
-                song = song,
-                isPlaying = isPlaying,
-                onExpand = onExpand,
-                onPlayPause = onPlayPause,
-                onNext = onNext,
-            )
-        }
-        DesktopFloatingNavigation(destination, onDestinationSelected)
+        DesktopCompactPlayerPill(
+            song = song,
+            isPlaying = isPlaying,
+            progress = progress,
+            shuffle = shuffle,
+            repeatMode = repeatMode,
+            volume = volume,
+            isLiked = isLiked,
+            sidePanel = sidePanel,
+            fullControls = !compact,
+            onExpand = onExpand,
+            onPlayPause = onPlayPause,
+            onNext = onNext,
+            onPrevious = onPrevious,
+            onToggleShuffle = onToggleShuffle,
+            onCycleRepeat = onCycleRepeat,
+            onToggleLike = onToggleLike,
+            onOpenLyrics = onOpenLyrics,
+            onOpenQueue = onOpenQueue,
+            onVolumeChange = onVolumeChange,
+            onOpenMenu = onOpenMenu,
+        )
+        if (compact) DesktopFloatingNavigation(destination, onDestinationSelected)
     }
 }
 
@@ -5682,12 +5766,35 @@ private fun DesktopFloatingNavigation(
 }
 
 @Composable
+/**
+ * The floating player pill, Apple Music style: a glass capsule with the transport on the left,
+ * the song in the middle and lyrics, queue and volume on the right, a thin progress line along
+ * its foot. Wide windows get the full controls; compact windows keep the condensed artwork +
+ * title + play + next layout. With no song loaded it shows the mark and greyed transport
+ * instead of vanishing, so the window's foot stays put.
+ */
+@Composable
 private fun DesktopCompactPlayerPill(
-    song: Song,
+    song: Song?,
     isPlaying: Boolean,
+    progress: Float,
+    shuffle: Boolean,
+    repeatMode: DesktopRepeatMode,
+    volume: Float,
+    isLiked: Boolean,
+    sidePanel: DesktopSidePanel?,
+    fullControls: Boolean,
     onExpand: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    onToggleLike: () -> Unit,
+    onOpenLyrics: () -> Unit,
+    onOpenQueue: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onOpenMenu: (Song) -> Unit,
 ) {
     val shape = RoundedCornerShape(percent = 50)
     val interaction = remember { MutableInteractionSource() }
@@ -5704,7 +5811,7 @@ private fun DesktopCompactPlayerPill(
 
     Box(
         modifier = Modifier
-            .widthIn(max = 440.dp)
+            .widthIn(max = if (fullControls) 720.dp else 440.dp)
             .fillMaxWidth()
             .scale(pillScale)
             .shadow(
@@ -5762,113 +5869,332 @@ private fun DesktopCompactPlayerPill(
                 interactionSource = interaction,
                 indication = null,
                 onClick = onExpand,
-            )
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            ),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+        if (fullControls) {
+            DesktopPillFullRow(
+                song = song,
+                isPlaying = isPlaying,
+                shuffle = shuffle,
+                repeatMode = repeatMode,
+                volume = volume,
+                isLiked = isLiked,
+                sidePanel = sidePanel,
+                onPlayPause = onPlayPause,
+                onNext = onNext,
+                onPrevious = onPrevious,
+                onToggleShuffle = onToggleShuffle,
+                onCycleRepeat = onCycleRepeat,
+                onToggleLike = onToggleLike,
+                onOpenLyrics = onOpenLyrics,
+                onOpenQueue = onOpenQueue,
+                onVolumeChange = onVolumeChange,
+                onOpenMenu = onOpenMenu,
+            )
+        } else {
+            DesktopPillCompactRow(
+                song = song,
+                isPlaying = isPlaying,
+                onPlayPause = onPlayPause,
+                onNext = onNext,
+            )
+        }
+        // The progress line along the pill's foot.
+        Box(
+            Modifier.align(Alignment.BottomStart).fillMaxWidth().height(2.dp)
+                .background(Color.Black.copy(alpha = 0.08f)),
+        )
+        Box(
+            Modifier.align(Alignment.BottomStart)
+                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .height(2.dp)
+                .background(DesktopAccent),
+        )
+    }
+}
+
+/** One round icon button inside the pill. */
+@Composable
+private fun DesktopPillIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String?,
+    onClick: () -> Unit,
+    tint: Color,
+    enabled: Boolean = true,
+) {
+    Box(
+        Modifier.size(34.dp).clip(CircleShape)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon,
+            description,
+            tint = if (enabled) tint else tint.copy(alpha = 0.35f),
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+/** The pill's play/pause button, with the spring bounce the compact pill already had. */
+@Composable
+private fun DesktopPillPlayButton(isPlaying: Boolean, enabled: Boolean, onPlayPause: () -> Unit) {
+    val playInteraction = remember { MutableInteractionSource() }
+    val playPressed by playInteraction.collectIsPressedAsState()
+    val playScale by animateFloatAsState(
+        targetValue = if (playPressed) 0.86f else 1.0f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
+        label = "pillPlayScale",
+    )
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .scale(playScale)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.08f))
+            .border(0.5.dp, Color.Black.copy(alpha = 0.10f), CircleShape)
+            .clickable(
+                interactionSource = playInteraction,
+                indication = null,
+                enabled = enabled,
+                onClick = onPlayPause,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            contentDescription = if (isPlaying) "Pause" else "Play",
+            tint = if (enabled) DesktopOnBackground else DesktopOnBackground.copy(alpha = 0.35f),
+            modifier = Modifier.size(21.dp),
+        )
+    }
+}
+
+/** The wide pill's row: transport, song, star, menu, lyrics, queue, volume. */
+@Composable
+private fun DesktopPillFullRow(
+    song: Song?,
+    isPlaying: Boolean,
+    shuffle: Boolean,
+    repeatMode: DesktopRepeatMode,
+    volume: Float,
+    isLiked: Boolean,
+    sidePanel: DesktopSidePanel?,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    onToggleLike: () -> Unit,
+    onOpenLyrics: () -> Unit,
+    onOpenQueue: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onOpenMenu: (Song) -> Unit,
+) {
+    val hasSong = song != null
+    val dim = DesktopOnBackground.copy(alpha = 0.7f)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DesktopPillIconButton(
+            icon = ChordWaveIcons.Shuffle,
+            description = DesktopStrings["shuffle", "Shuffle"],
+            onClick = onToggleShuffle,
+            tint = if (shuffle) DesktopAccent else dim,
+            enabled = hasSong,
+        )
+        DesktopPillIconButton(
+            icon = Icons.Rounded.SkipPrevious,
+            description = DesktopStrings["widget_previous", "Previous"],
+            onClick = onPrevious,
+            tint = DesktopOnBackground,
+            enabled = hasSong,
+        )
+        DesktopPillPlayButton(isPlaying, hasSong, onPlayPause)
+        DesktopPillIconButton(
+            icon = Icons.Rounded.SkipNext,
+            description = DesktopStrings["widget_next", "Next"],
+            onClick = onNext,
+            tint = DesktopOnBackground,
+            enabled = hasSong,
+        )
+        DesktopPillIconButton(
+            icon = if (repeatMode == DesktopRepeatMode.ONE) Icons.Rounded.RepeatOne else ChordWaveIcons.Repeat,
+            description = DesktopStrings["repeat", "Repeat"],
+            onClick = onCycleRepeat,
+            tint = if (repeatMode == DesktopRepeatMode.OFF) dim else DesktopAccent,
+            enabled = hasSong,
+        )
+        Spacer(Modifier.width(10.dp))
+        Box(
+            Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.05f)),
+            contentAlignment = Alignment.Center,
         ) {
-            // Album art with rounded square and subtle glass rim
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(10.dp)),
-            ) {
+            if (song?.thumbnailUrl != null) {
+                DesktopArtwork(song.thumbnailUrl, Modifier.fillMaxSize(), px = ROW_ART_PX)
+            } else {
+                Image(
+                    painter = painterResource(Res.drawable.logo_mark),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(0.7f),
+                )
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = song?.title ?: "ChordWave",
+                color = DesktopOnBackground,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = song?.artist ?: "Nothing playing",
+                color = DesktopSecondary,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (song != null) {
+            DesktopPillIconButton(
+                icon = if (isLiked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                description = if (isLiked) "Liked" else "Like",
+                onClick = onToggleLike,
+                tint = if (isLiked) DesktopAccent else DesktopSecondary,
+            )
+            DesktopPillIconButton(
+                icon = Icons.Rounded.MoreHoriz,
+                description = DesktopStrings["more", "More"],
+                onClick = { onOpenMenu(song) },
+                tint = dim,
+            )
+        }
+        DesktopPillIconButton(
+            icon = ChordWaveIcons.LyricsQuote,
+            description = DesktopStrings["lyrics", "Lyrics"],
+            onClick = onOpenLyrics,
+            tint = if (sidePanel == DesktopSidePanel.LYRICS) DesktopAccent else dim,
+            enabled = hasSong,
+        )
+        DesktopPillIconButton(
+            icon = ChordWaveIcons.Queue,
+            description = DesktopStrings["queue", "Queue"],
+            onClick = onOpenQueue,
+            tint = if (sidePanel == DesktopSidePanel.QUEUE) DesktopAccent else dim,
+            enabled = hasSong,
+        )
+        Icon(
+            Icons.Rounded.VolumeUp,
+            contentDescription = DesktopStrings["volume", "Volume"],
+            tint = dim,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        DesktopThinSlider(
+            value = volume,
+            onValueChange = onVolumeChange,
+            modifier = Modifier.width(72.dp),
+            activeColor = DesktopOnBackground,
+            inactiveColor = Color.Black.copy(alpha = 0.24f),
+            markerColor = Color.Black.copy(alpha = 0.5f),
+        )
+    }
+}
+
+/** The compact pill's row: artwork, title, play, next — the condensed layout, in light ink. */
+@Composable
+private fun DesktopPillCompactRow(
+    song: Song?,
+    isPlaying: Boolean,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+) {
+    val hasSong = song != null
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .border(0.5.dp, Color.Black.copy(alpha = 0.10f), RoundedCornerShape(10.dp))
+                .background(Color.Black.copy(alpha = 0.05f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (song?.thumbnailUrl != null) {
                 DesktopArtwork(
                     url = song.thumbnailUrl,
                     modifier = Modifier.fillMaxSize(),
                     px = ROW_ART_PX,
                 )
-            }
-
-            Spacer(Modifier.width(11.dp))
-
-            // Title and Artist
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = song.title,
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(1.dp))
-                Text(
-                    text = song.artist,
-                    color = Color.White.copy(alpha = 0.60f),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            } else {
+                Image(
+                    painter = painterResource(Res.drawable.logo_mark),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(0.7f),
                 )
             }
-
-            Spacer(Modifier.width(8.dp))
-
-            // Tactile Play/Pause button with spring bounce
-            val playInteraction = remember { MutableInteractionSource() }
-            val playPressed by playInteraction.collectIsPressedAsState()
-            val playScale by animateFloatAsState(
-                targetValue = if (playPressed) 0.86f else 1.0f,
-                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
-                label = "pillPlayScale",
+        }
+        Spacer(Modifier.width(11.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = song?.title ?: "ChordWave",
+                color = DesktopOnBackground,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .scale(playScale)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.14f))
-                    .border(0.5.dp, Color.White.copy(alpha = 0.30f), CircleShape)
-                    .clickable(
-                        interactionSource = playInteraction,
-                        indication = null,
-                        onClick = onPlayPause,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            Spacer(Modifier.width(6.dp))
-
-            // Tactile Skip Next button with spring bounce
-            val nextInteraction = remember { MutableInteractionSource() }
-            val nextPressed by nextInteraction.collectIsPressedAsState()
-            val nextScale by animateFloatAsState(
-                targetValue = if (nextPressed) 0.86f else 1.0f,
-                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
-                label = "pillNextScale",
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = song?.artist ?: "Nothing playing",
+                color = DesktopSecondary,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .scale(nextScale)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.08f))
-                    .clickable(
-                        interactionSource = nextInteraction,
-                        indication = null,
-                        onClick = onNext,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.SkipNext,
-                    contentDescription = DesktopStrings["widget_next", "Next"],
-                    tint = Color.White.copy(alpha = 0.85f),
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+        }
+        Spacer(Modifier.width(8.dp))
+        DesktopPillPlayButton(isPlaying, hasSong, onPlayPause)
+        Spacer(Modifier.width(6.dp))
+        val nextInteraction = remember { MutableInteractionSource() }
+        val nextPressed by nextInteraction.collectIsPressedAsState()
+        val nextScale by animateFloatAsState(
+            targetValue = if (nextPressed) 0.86f else 1.0f,
+            animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
+            label = "pillNextScale",
+        )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .scale(nextScale)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.05f))
+                .clickable(
+                    interactionSource = nextInteraction,
+                    indication = null,
+                    enabled = hasSong,
+                    onClick = onNext,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.SkipNext,
+                contentDescription = DesktopStrings["widget_next", "Next"],
+                tint = if (hasSong) DesktopOnBackground.copy(alpha = 0.85f) else DesktopOnBackground.copy(alpha = 0.35f),
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -6015,16 +6341,16 @@ private fun DesktopFrame(
                                                     PaddingValues(
                                                         start = 0.dp,
                                                         end = 0.dp,
-                                                        // Room for the floating bottom bar only when compact.
-                                                        // In wide desktop mode, topBar owns the controls.
-                                                        bottom = if (isCompact) 128.dp else 16.dp,
+                                                        // Room for the floating pill: taller in
+                                                        // compact mode, where the tab bar rides
+                                                        // under it.
+                                                        bottom = if (isCompact) 128.dp else 96.dp,
                                                     ),
                                                 )
                                             }
-                                            // Render floating bottom bar ONLY in compact mode to prevent double bar.
-                                            if (isCompact) {
-                                                Box(Modifier.align(Alignment.BottomCenter)) { bottomBar(true) }
-                                            }
+                                            // The floating pill, in every mode; the tab
+                                            // navigation only joins it in compact mode.
+                                            Box(Modifier.align(Alignment.BottomCenter)) { bottomBar(isCompact) }
                                         }
                                         Box(
                                             Modifier

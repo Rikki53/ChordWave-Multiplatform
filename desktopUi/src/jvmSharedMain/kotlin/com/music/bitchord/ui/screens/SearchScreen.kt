@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import com.music.bitchord.ui.components.longPressMenuClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,6 +65,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import coil3.compose.AsyncImage
 import com.music.bitchord.data.model.BrowseItem
+import com.music.bitchord.data.model.MoodGenre
 import com.music.bitchord.data.model.BrowseType
 import com.music.bitchord.data.model.ROW_ART_PX
 import com.music.bitchord.data.model.SearchFilter
@@ -161,6 +163,12 @@ fun SearchScreen(
      * about the results, and the switcher would just push them down.
      */
     sourceSwitcher: (@Composable () -> Unit)? = null,
+    /**
+     * Mood/genre tiles under the recents, Apple Music style. The desktop passes
+     * Explore's categories; the phone passes none and sees no change.
+     */
+    browseCategories: List<MoodGenre> = emptyList(),
+    onBrowseCategoryClick: ((MoodGenre) -> Unit)? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -287,17 +295,22 @@ fun SearchScreen(
                         )
                     }
                 }
-                results == null -> if (history.isEmpty()) {
-                    item { MessageState(stringResource(Res.string.search_empty)) }
-                } else {
-                    recentSearches(
-                        history = history,
-                        currentSong = currentSong,
-                        isPlaying = isPlaying,
-                        onClick = onHistoryClick,
-                        onRemove = onHistoryRemove,
-                        onClear = onHistoryClear,
-                    )
+                results == null -> {
+                    if (history.isEmpty()) {
+                        item { MessageState(stringResource(Res.string.search_empty)) }
+                    } else {
+                        recentSearches(
+                            history = history,
+                            currentSong = currentSong,
+                            isPlaying = isPlaying,
+                            onClick = onHistoryClick,
+                            onRemove = onHistoryRemove,
+                            onClear = onHistoryClear,
+                        )
+                    }
+                    if (browseCategories.isNotEmpty() && onBrowseCategoryClick != null) {
+                        browseCategoriesSection(browseCategories, onBrowseCategoryClick)
+                    }
                 }
                 results is UiState.Loading -> songListSkeleton(circular = filter == SearchFilter.ARTISTS)
                 results is UiState.Error -> item { MessageState(results.message) }
@@ -745,6 +758,45 @@ private fun TypeaheadSongRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+/**
+ * The mood/genre tiles under the recents — Apple Music's Browse Categories,
+ * two across, opening the category's shelves on tap.
+ */
+private fun LazyListScope.browseCategoriesSection(
+    categories: List<MoodGenre>,
+    onClick: (MoodGenre) -> Unit,
+) {
+    item(key = "browse:header") {
+        Text(
+            text = "Browse Categories",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = PAGE_GUTTER).padding(top = 18.dp, bottom = 10.dp),
+        )
+    }
+    items(
+        categories.chunked(2),
+        key = { row -> row.first().let { "${it.browseId}|${it.params}" } },
+    ) { row ->
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = PAGE_GUTTER).padding(bottom = 12.dp),
+        ) {
+            row.forEach { item ->
+                MoodGenreSleeve(
+                    item = item,
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(MOOD_CARD_ASPECT)
+                        .clip(RoundedCornerShape(18.dp))
+                        .clickable { onClick(item) },
+                )
+            }
+            if (row.size == 1) Spacer(Modifier.weight(1f))
         }
     }
 }
