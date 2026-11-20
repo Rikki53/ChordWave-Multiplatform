@@ -5366,7 +5366,6 @@ private fun DesktopSidebarRestoreRow(hidden: Map<String, String>) {
     }
 }
 
-@Composable
 /**
  * The floating chrome at the foot of the window: the player pill, always, and the tab
  * navigation under it in compact mode, where there is no sidebar.
@@ -5768,7 +5767,6 @@ private fun DesktopFloatingNavigation(
     }
 }
 
-@Composable
 /**
  * The floating player pill, Apple Music style: a glass capsule with the transport on the left,
  * the song in the middle and lyrics, queue and volume on the right, a thin progress line along

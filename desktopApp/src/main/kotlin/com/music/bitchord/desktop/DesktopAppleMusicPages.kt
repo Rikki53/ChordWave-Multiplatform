@@ -1083,9 +1083,8 @@ internal fun DesktopMadeForYouPage(
                         "View Replay",
                     )
                 }
-                return@DesktopPageScaffold
-            }
-            val cards = summary.heroCards()
+            } else {
+                val cards = summary.heroCards()
             if (cards.isNotEmpty()) {
                 item {
                     SectionTitle("Your Replay")
@@ -1213,6 +1212,7 @@ internal fun DesktopMadeForYouPage(
                     }
                     Spacer(Modifier.height(12.dp))
                 }
+            }
             }
         }
     }
