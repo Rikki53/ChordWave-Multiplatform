@@ -5087,15 +5087,6 @@ private fun DesktopSidebar(
             }
             Spacer(Modifier.height(14.dp))
             DesktopSidebarSection("ChordWave")
-            if (HISTORY_KEY !in hiddenSidebar) {
-                DesktopSidebarItem(
-                    Icons.Rounded.History,
-                    "History",
-                    destination == DesktopDestination.HISTORY,
-                    onClick = { onDestinationSelected(DesktopDestination.HISTORY) },
-                    onHide = { DesktopSidebarVisibility.hide(HISTORY_KEY, "History") },
-                )
-            }
             val queued by DesktopDownloadQueue.active.collectAsState()
             if (DOWNLOADS_KEY !in hiddenSidebar) {
                 DesktopSidebarItem(
@@ -5113,6 +5104,15 @@ private fun DesktopSidebar(
                     destination == DesktopDestination.LOCAL_MUSIC,
                     onClick = { onDestinationSelected(DesktopDestination.LOCAL_MUSIC) },
                     onHide = { DesktopSidebarVisibility.hide(LOCAL_MUSIC_KEY, "Local Music") },
+                )
+            }
+            if (HISTORY_KEY !in hiddenSidebar) {
+                DesktopSidebarItem(
+                    Icons.Rounded.History,
+                    "History",
+                    destination == DesktopDestination.HISTORY,
+                    onClick = { onDestinationSelected(DesktopDestination.HISTORY) },
+                    onHide = { DesktopSidebarVisibility.hide(HISTORY_KEY, "History") },
                 )
             }
             Spacer(Modifier.height(14.dp))
